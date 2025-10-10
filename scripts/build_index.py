@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Stub script to build vector indexes (chat/story) for future RAG.
+"""
+Stub script to build vector indexes (chat/story) for future RAG.
 Currently just creates a placeholder file in data/indexes.
 """
 from pathlib import Path

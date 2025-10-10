@@ -3,7 +3,7 @@
 from pathlib import Path
 import json
 from src.core.persona import load_persona
-from src.service.orchestrator import handle_chat
+from src.orchestrator import handle_chat
 
 def main():
     persona = load_persona()

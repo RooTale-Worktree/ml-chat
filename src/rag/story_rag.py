@@ -6,8 +6,8 @@ Replace later with vector similarity search.
 from pathlib import Path
 import json
 from typing import List
-from ..core.schemas import RAGChunk, StoryRAGResult
-from ..config.config import settings
+from src.core.schemas import RAGChunk, StoryRAGResult
+from src.config.config import settings
 
 _STORY_PATHS = [Path("data/mock/story.json"), Path("mock_data/mock_story.json"), Path("story.json")]
 

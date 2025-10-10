@@ -1,10 +1,11 @@
 from __future__ import annotations
+import argparse
 """RunPod serverless handler entrypoint.
 
 RunPod expects a handler(event) -> dict style function.
 Each event should include a JSON payload conforming to ChatRequest schema.
 """
-from src.service.orchestrator import handle_chat
+from src.orchestrator import handle_chat
 
 
 def handler(event):  # RunPod style
@@ -14,8 +15,15 @@ def handler(event):  # RunPod style
         raise ValueError("Invalid event payload; expected dict or {'input': dict}")
     return handle_chat(payload)
 
+
 # For local manual test
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str,
+                        default="mock_llm", help="model name")
+    args = parser.parse_args()
+
     from src.core.persona import load_persona
     persona = load_persona()
     sample = {
@@ -23,7 +31,7 @@ if __name__ == "__main__":
         "history": [],
         "persona": persona.model_dump(),
         "gen": {},
-        "model": {}
+        "model": {"name": args.model}
     }
     out = handler({"input": sample})
     from pprint import pprint

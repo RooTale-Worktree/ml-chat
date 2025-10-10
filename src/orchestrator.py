@@ -1,20 +1,20 @@
 from __future__ import annotations
 """High-level orchestration: combines RAG + persona + LLM."""
 from typing import Dict
-from ..core.schemas import (
-    ChatRequest, ChatResponse, PromptBuildInput
-)
-from ..core.persona import load_persona
-from ..rag.chat_rag import retrieve_chat_context
-from ..rag.story_rag import retrieve_story_context
-from ..core.prompt_builder import build_prompt
-from ..llm.pygmalion_llm import PygmalionLLM
-from ..config.config import settings
+
+from src.core.schemas import ChatRequest, ChatResponse, PromptBuildInput
+from src.core.prompt_builder import build_prompt
+from src.rag.chat_rag import retrieve_chat_context
+from src.rag.story_rag import retrieve_story_context
+from src.llm.pygmalion_llm import PygmalionLLM
+from src.llm.mock_llm import MockLLM
+from src.config.config import settings
 
 _llm_singleton = None
 
 def _get_llm():
-    """Lazy-load singleton real Pygmalion model.
+    """
+    Lazy-load singleton real Pygmalion model.
     In the future we could branch based on settings.env or a flag to use mock.
     """
     global _llm_singleton
@@ -44,8 +44,12 @@ def handle_chat(payload: Dict) -> Dict:
     )
     prompt_out = build_prompt(prompt_input)
 
-    # LLM generate (real pygmalion)
-    llm = _get_llm()
+    # LLM generate (branch by request.model.name)
+    model_name = (req.model or {}).get("name") if isinstance(req.model, dict) else None
+    if model_name == "mock_llm":
+        llm = MockLLM()
+    else:
+        llm = _get_llm()
     gen_result = llm.generate(prompt_out.prompt, **req.gen)
 
     resp = ChatResponse(

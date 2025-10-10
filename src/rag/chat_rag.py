@@ -3,14 +3,21 @@ from __future__ import annotations
 For now, returns last N user/character turns as pseudo-context.
 Later can be replaced by semantic search over dialogue memory store.
 """
-from typing import List
-from ..core.schemas import DialogueTurn, RAGChunk, ChatRAGResult
-from ..config.config import settings
+from typing import List, Union
+from src.core.schemas import DialogueTurn, RAGChunk, ChatRAGResult, Message
+from src.config.config import settings
 
 _DEF_SOURCE = "chat_history"
 
-def retrieve_chat_context(history: List[DialogueTurn]) -> ChatRAGResult:
-    turns = history[-settings.chat_k:]
+def retrieve_chat_context(history: List[Union[DialogueTurn, Message]]) -> ChatRAGResult:
+    # Normalize to DialogueTurn
+    norm: List[DialogueTurn] = []
+    for h in history:
+        if isinstance(h, Message):
+            norm.append(h.to_dialogue_turn())
+        else:
+            norm.append(h)
+    turns = norm[-settings.chat_k:]
     chunks: List[RAGChunk] = []
     for i, t in enumerate(turns):
         chunks.append(RAGChunk(
