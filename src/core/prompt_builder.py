@@ -1,7 +1,7 @@
 from __future__ import annotations
 """Prompt assembly combining persona + chat context + story context + history + user message."""
 from typing import List
-from .schemas import (
+from src.core.schemas import (
     PromptBuildInput, PromptBuildOutput, DialogueTurn, RAGChunk
 )
 

@@ -2,8 +2,9 @@ from __future__ import annotations
 """Persona loading utilities."""
 from pathlib import Path
 import json
-from .schemas import Persona
 from typing import Union
+
+from src.core.schemas import Persona
 
 _DEF_PATHS = [
     Path("data/mock/persona.json"),
