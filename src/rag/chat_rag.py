@@ -1,10 +1,13 @@
-from __future__ import annotations
-"""Chat (recent dialogue) retrieval stub.
+"""
+Chat (recent dialogue) retrieval stub.
 For now, returns last N user/character turns as pseudo-context.
 Later can be replaced by semantic search over dialogue memory store.
 """
+from __future__ import annotations
 from typing import List, Union
-from src.core.schemas import DialogueTurn, RAGChunk, ChatRAGResult, Message
+
+from src.schemas.request import Message
+from src.schemas.rag import DialogueTurn, RAGChunk, ChatRAGResult
 from src.config.config import settings
 
 _DEF_SOURCE = "chat_history"

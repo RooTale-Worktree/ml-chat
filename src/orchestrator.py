@@ -20,7 +20,7 @@ _llm_singleton = None
 
 def _get_llm():
     """
-    Lazy-load singleton real Pygmalion model.
+    Lazy-load singleton Pygmalion model.
     In the future we could branch based on settings.env or a flag to use mock.
     """
     global _llm_singleton
@@ -33,12 +33,12 @@ def handle_chat(payload: Dict) -> Dict:
     # Parse request
     req = ChatRequest(**payload)
 
-    # Persona already provided in request; if not, could fallback load_persona()
+    # Persona
     persona = req.persona
 
-    # RAG steps
+    # RAG
     chat_rag = retrieve_chat_context(req.history)
-    story_rag = retrieve_story_context()
+    story_rag = retrieve_story_context(req.story)
 
     # Build prompt
     prompt_input = PromptBuildInput(
@@ -50,12 +50,14 @@ def handle_chat(payload: Dict) -> Dict:
     )
     prompt_out = build_prompt(prompt_input)
 
-    # LLM generate (branch by request.model.name)
+    # LLM generate
     model_name = (req.model or {}).get("name") if isinstance(req.model, dict) else None
     if model_name == "mock_llm":
         llm = MockLLM()
-    else:
+    elif model_name == "pygmalion-6b":
         llm = _get_llm()
+    else:
+        raise ValueError(f"Not supported model: {model_name}")
     gen_result = llm.generate(prompt_out.prompt, **req.gen)
 
     resp = ChatResponse(

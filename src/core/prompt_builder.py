@@ -1,9 +1,12 @@
+"""
+Prompt assembly combining persona + chat context + story context + history + user message.
+"""
 from __future__ import annotations
-"""Prompt assembly combining persona + chat context + story context + history + user message."""
 from typing import List
-from src.core.schemas import (
-    PromptBuildInput, PromptBuildOutput, DialogueTurn, RAGChunk
-)
+
+from src.schemas.request import DialogueTurn
+from src.schemas.rag import PromptBuildInput, PromptBuildOutput, RAGChunk
+
 
 SYSTEM_TEMPLATE = """<<SYSTEM>>\nYou are roleplaying as the character below. Stay in character.\nName: {name}\nPersona: {persona}\nScenario: {scenario}\nStyle: {style}\nConstraints: {constraints}\n<<END_SYSTEM>>\n"""
 

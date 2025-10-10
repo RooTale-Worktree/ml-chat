@@ -1,5 +1,7 @@
+"""
+Mock LLM adapter for local testing without heavy model downloads.
+"""
 from __future__ import annotations
-"""Mock LLM adapter for local testing without heavy model downloads."""
 from dataclasses import dataclass
 import random
 from typing import Dict

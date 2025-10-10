@@ -1,5 +1,5 @@
-from __future__ import annotations
-"""Central configuration loader.
+"""
+Central configuration loader.
 
 Environment precedence:
 1. Explicit function arguments / overrides
@@ -8,6 +8,7 @@ Environment precedence:
 
 Add any service-wide constants or dynamic settings here.
 """
+from __future__ import annotations
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from functools import lru_cache

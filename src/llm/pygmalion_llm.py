@@ -1,5 +1,5 @@
-from __future__ import annotations
-"""Pygmalion LLM adapter using HuggingFace Transformers.
+"""
+Pygmalion LLM adapter using HuggingFace Transformers.
 
 This wraps loading + generation so orchestrator can switch between mock and real model.
 
@@ -7,6 +7,7 @@ NOTES:
 - For serverless cold start, consider lazy loading and optionally quantization.
 - Stop string trimming kept simple; can be extended.
 """
+from __future__ import annotations
 from typing import Dict, Optional, List
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -29,7 +30,7 @@ class PygmalionLLM:
         )
         self.model.eval()
 
-    def _trim(self, prompt: str, generated: str) -> (str, str):
+    def _trim(self, prompt: str, generated: str):
         cut_idx = len(generated)
         reason = "eos"
         for s in _STOP_STRINGS:

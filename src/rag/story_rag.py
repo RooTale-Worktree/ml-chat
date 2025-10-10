@@ -1,16 +1,17 @@
-from __future__ import annotations
-"""Story retrieval stub.
+"""
+Story retrieval stub.
 Loads mock story JSON and slices first K paragraphs.
 Replace later with vector similarity search.
 """
+from __future__ import annotations
 from pathlib import Path
 import json
 from typing import List
-from src.core.schemas import RAGChunk, StoryRAGResult
+
+from src.schemas.rag import RAGChunk, StoryRAGResult
 from src.config.config import settings
 
 _STORY_PATHS = [Path("data/mock/story.json"), Path("mock_data/mock_story.json"), Path("story.json")]
-
 
 def _load_story() -> List[str]:
     for p in _STORY_PATHS:

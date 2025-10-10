@@ -1,4 +1,5 @@
-from src.core.schemas import Persona, DialogueTurn, RAGChunk, PromptBuildInput
+from src.schemas.request import Persona, DialogueTurn
+from src.schemas.rag import RAGChunk, PromptBuildInput
 from src.core.prompt_builder import build_prompt
 
 
