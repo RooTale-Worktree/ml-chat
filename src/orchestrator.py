@@ -1,11 +1,17 @@
+"""
+High-level orchestration: combines RAG + persona + LLM.
+"""
 from __future__ import annotations
-"""High-level orchestration: combines RAG + persona + LLM."""
 from typing import Dict
 
-from src.core.schemas import ChatRequest, ChatResponse, PromptBuildInput
+from src.schemas.request import ChatRequest
+from src.schemas.response import ChatResponse
+from src.schemas.rag import PromptBuildInput
+
 from src.core.prompt_builder import build_prompt
 from src.rag.chat_rag import retrieve_chat_context
 from src.rag.story_rag import retrieve_story_context
+
 from src.llm.pygmalion_llm import PygmalionLLM
 from src.llm.mock_llm import MockLLM
 from src.config.config import settings

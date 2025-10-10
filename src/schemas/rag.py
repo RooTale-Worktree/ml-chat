@@ -1,3 +1,6 @@
+"""
+Pydantic schemas for RAG objects.
+"""
 from __future__ import annotations
 from pydantic import BaseModel, UUID4, Field
 from typing import List, Optional, Dict, Any, Literal
@@ -5,9 +8,6 @@ from datetime import datetime
 
 from src.schemas.request import Persona, DialogueTurn
 
-"""
-    Pydantic schemas for request objects
-"""
 
 class RAGChunk(BaseModel):
     id: str

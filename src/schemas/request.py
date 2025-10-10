@@ -1,11 +1,12 @@
+"""
+Pydantic schemas for request objects.
+"""
 from __future__ import annotations
 from pydantic import BaseModel, UUID4, Field
 from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 
-"""
-    Pydantic schemas for request objects
-"""
+
 Role = Literal["user", "assistant", "system", "character", "narrator"]
 
 # persona에서 예시 대화를 관리하기 위한 table

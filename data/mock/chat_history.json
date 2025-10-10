@@ -1,6 +1,0 @@
-[
-  {"role": "user", "text": "안녕 아리아"},
-  {"role": "character", "text": "오! 너 왔구나. 준비됐어?"},
-  {"role": "user", "text": "오늘 탐험 위험하지 않을까?"},
-  {"role": "character", "text": "약간은 위험하지만, 그게 더 짜릿하지!"}
-]

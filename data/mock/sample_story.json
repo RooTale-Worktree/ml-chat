@@ -1,0 +1,13 @@
+[
+  {
+    "story_id": "9b2b7b4a-6a1c-4e0f-9b0b-2f5c3e1d9c01",
+    "story_type": "event",
+    "content": "어제 비가 와서 야외 약속이 취소되었다.",
+    "timestamp": "2025-10-09T20:30:00",
+    "meta": {},
+    "embedding": null,
+    "embedding_dim": null,
+    "embedding_model": null,
+    "embedding_etag": null
+  }
+]

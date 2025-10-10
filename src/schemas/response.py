@@ -1,11 +1,12 @@
+"""
+Pydantic schemas for response objects
+"""
 from __future__ import annotations
 from pydantic import BaseModel, UUID4, Field
 from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 
-"""
-    Pydantic schemas for request objects
-"""
+
 Role = Literal["user", "assistant", "system", "character", "narrator"]
 FinishReason = Literal["stop", "length", "eos", "content_filter", "error"]
 
