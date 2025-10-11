@@ -118,8 +118,8 @@ def handle_chat(payload: Dict) -> Dict:
     resp = ChatResponse(
         session_id=req.session_id or "",
         responded_as="character",
-        responded_character_id=req.persona.persona_id,
-        responded_character_name=req.persona.name,
+        responded_character_id=req.persona.character_id,
+        responded_character_name=req.persona.character_name,
         choices=[Choice(role="character", content=gen_result["reply"])],
         usage=usage,
         retrieved=retrieved,
