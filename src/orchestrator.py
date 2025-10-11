@@ -67,7 +67,7 @@ def handle_chat(payload: Dict) -> Dict:
     prompt_out = build_prompt(prompt_input)
 
     # LLM generate
-    model_name = (req.model or {}).get("name") if isinstance(req.model, dict) else None
+    model_name = req.model.name if req.model else None
     if model_name == "mock_llm":
         llm = MockLLM()
     elif model_name == "pygmalion-6b":
