@@ -19,7 +19,7 @@ def _format_examples(persona) -> str:
         return ""
     lines = []
     for t in persona.example_dialogue:
-        role = persona.name if str(t.role).lower() == "character" else "User"
+        role = persona.character_name if str(t.role).lower() == "character" else "User"
         lines.append(f"{role}: {t.content}")
     return EXAMPLES_HEADER.format(examples="\n".join(lines))
 
