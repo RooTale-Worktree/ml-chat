@@ -1,89 +1,145 @@
-# ML Character Chat (Story + Persona RAG)
-
 ## 개요
-스토리(world/story) 기반 컨텍스트와 최근 대화 맥락을 결합하고, 고정 Persona 정보를 포함한 프롬프트를 구성하여 캐릭터 특화 LLM (예: Pygmalion)에게 질의하는 구조의 Chat 서비스 스캐폴딩입니다. RunPod serverless 환경의 handler 패턴을 고려해 작성되었습니다.
+
+스토리 기반 context와 최근 대화 맥락을 결합하고, Persona 정보를 포함한 프롬프트를 구성하여 캐릭터 특화 LLM에게 질의하는 구조의 Chat 서비스 스캐폴딩입니다.
 
 ## 디렉토리 구조
+
 ```
 .
-├── handler.py                # RunPod serverless 엔트리포인트
-├── scripts/
-│   ├── build_index.py        # 향후 벡터 인덱스 빌드 스크립트 (현재 placeholder)
-│   └── run_local.py          # 로컬 E2E 테스트 (Mock LLM)
-├── data/
-│   ├── mock/
-│   │   ├── persona.json
-│   │   ├── story.json
-│   │   └── chat_history.json
-│   └── indexes/              # (미래) 벡터 인덱스 저장 위치
-├── src/
-│   ├── config/
-│   │   └── config.py         # 환경/설정
-│   ├── core/
-│   │   ├── schemas.py        # Pydantic 스키마
-│   │   ├── persona.py        # Persona 로드 유틸
-│   │   └── prompt_builder.py # 프롬프트 조립
-│   ├── rag/
-│   │   ├── chat_rag.py       # 최근 대화 맥락 RAG (stub)
-│   │   └── story_rag.py      # 스토리 컨텍스트 RAG (stub)
-│   ├── llm/
-│   │   └── mock_llm.py       # 경량 Mock LLM 어댑터
-│   ├── service/
-│   │   └── orchestrator.py   # 전체 오케스트레이션
-│   └── utils/                # (추가 예정) 공용 유틸
-├── tests/
-│   └── test_prompt_builder.py
-└── requirements.txt
+├── data
+│   ├── indexes
+│   └── mock
+│       ├── sample_history.json
+│       ├── sample_persona.json
+│       ├── sample_request.json
+│       └── sample_story.json
+├── handler.py
+├── README.md
+├── requirements.txt
+├── scripts
+│   └── build_index.py
+├── src
+│   ├── config
+│   │   └── config.py
+│   ├── core
+│   │   ├── embedding.py
+│   │   └── prompt_builder.py
+│   ├── llm
+│   │   ├── mock_llm.py
+│   │   └── pygmalion_llm.py
+│   ├── orchestrator.py
+│   ├── rag
+│   │   ├── chat_rag.py
+│   │   └── story_rag.py
+│   ├── schema
+│   │   ├── embedding.py
+│   │   ├── rag.py
+│   │   ├── request.py
+│   │   └── response.py
+│   └── utils
+└── tests
+    └── test_prompt_builder.py
 ```
 
-## 처리 흐름
-1. (RunPod) `handler(event)` 호출 → `event['input']` 파싱
-2. `ChatRequest` 스키마 검증
-3. `retrieve_chat_context`로 최근 대화 일부 추출 (stub)
-4. `retrieve_story_context`로 스토리 일부 추출 (stub)
-5. `build_prompt`가 persona + 두 컨텍스트 + history + user message를 하나의 prompt로 조립
-6. Mock LLM (또는 실제 LLM 어댑터) 호출
-7. 최종 `ChatResponse` 반환 (reply, 사용된 컨텍스트, 메타 정보 포함)
+## 스크립트 기능
 
-## 로컬 실행 (Mock)
-사전 준비: 가상환경 생성 및 의존성 설치
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+1. `handler.py`
+    - Runpod Stateless의 entrypoint입니다.
+    - 내부에 있는 `handler(event)` 함수를 호출하면 `event[’input’]`을 파싱하여 `src/orchestrator.py`의 `handle_chat(payload)` 함수를 호출합니다.
+    - root 디렉토리에서 shell에 아래 명령어를 입력하여 로컬 테스트를 진행할 수 있습니다.
+        
+        ```bash
+        python -m handler
+        ```
+        
+    - 로컬 테스트 시에 CLI 옵션을 통해 어떤 mock-up data를 불러올지 지정할 수 있습니다. 자세한 옵션은 `handler.py`의 `argparser`를 통해 확인할 수 있습니다.
+        
+        ```bash
+        python -m handler --persona ./data/mock/sample_persona.json
+        ```
+        
+2. `src/orchestrator.py`
+    - 한 턴의 대화에 대해 ‘사용자 질의’ → ‘LLM 응답’의 전체 과정을 관리하기 위한 스크립트입니다.
+    - 다음의 workflow로 한 턴의 대화를 처리합니다.
+        1. `src/core/embedding.py`의 `embed_text(text)`를 호출하여 사용자의 질의문을 벡터로 임베딩합니다. (RAG에서 cosine 유사도를 계산하기 위함)
+        2. `src/rag/chat_rag.py`의 `retrieve_chat_context()`함수를 호출하여 지난 채팅 맥락 기반 RAG를 호출합니다.
+        3. `src/rag/story_rag.py`의 `retrieve_story_context()`함수를 호출하여 스토리 기반 RAG를 호출합니다.
+        4. `src/core/prompt_builder.py`의 `build_prompt()`함수를 호출합니다. persona, chat RAG, story RAG, 사용자 질의를 기반으로 프롬프트를 생성합니다.
+        5. LLM 모델을 로드한 후 답변을 생성합니다.
+        6. Response 타입에 맞게 파싱한 후, 결과를 반환합니다.
+3. `src/schemas/request.py`
+    - ‘사용자 질의’의 형식을 관리하기 위한 pydantic model을 정의합니다. (백엔드 → serverless 호출에서의 interface)
+    - 채팅 히스토리, RAG 조건, 스토리, 사용 모델 등의 정보를 관리합니다.
+        
+        ```python
+        # handler가 처리해야하는 request의 형식
+        class ChatRequest(BaseModel):
+            message: str
+            session_id: Optional[str] = None
+            user_id: Optional[str] = None
+            persona: Persona
+            history: List[Message] = Field(default_factory=list)
+            chat_rag_config: ChatRAGConfig = Field(default_factory=ChatRAGConfig)
+            story: List[StoryEvent] = Field(default_factory=list)
+            model: ModelConfig = Field(default_factory=ModelConfig)
+            gen: GenConfig = Field(default_factory=GenConfig)
+            meta: Dict[str, Any] = Field(default_factory=dict)
+        ```
+        
+4. `src/schemas/response.py`
+    - ‘LLM 응답’의 형식을 관리하기 위한 pydantic model을 정의합니다. (serverless → 백엔드 응답에서의 interface)
+    - LLM 응답, RAG 점수, 사용 프롬프트 등의 정보를 관리합니다.
+        
+        ```python
+        # handler가 반환해야하는 response 형식
+        class ChatResponse(BaseModel):
+            session_id: str
+            responded_as: Literal["narrator", "character"] = "character"
+            response_contents: List[ResponseContent]
+            usage: Optional[Usage] = None
+            retrieved: List[RetrievalItem] = Field(default_factory=list)
+        
+            # 실행/디버깅 메타
+            model_info: Optional[ModelInfo] = None
+            timing: Optional[Timing] = None
+            error: Optional[str] = None
+            meta: Dict[str, Any] = Field(default_factory=dict)
+        ```
+        
+5. `src/schemas/rag.py`
+    - Serverless 내부에서 RAG 및 prompt의 input과 output을 관리하기 위한 pydantic model을 정의합니다.
+    - 아직 RAG 부분의 구현이 완벽하지 않으므로 수정될 수 있습니다.
+        
+        ```python
+        class RAGChunk(BaseModel):
+            id: str
+            source: str
+            text: str
+            score: Optional[float] = None
+            meta: Dict[str, Any] = {}
+        
+        class ChatRAGResult(BaseModel):
+            context: List[RAGChunk]
+        
+        class StoryRAGResult(BaseModel):
+            context: List[RAGChunk]
+        
+        class PromptBuildInput(BaseModel):
+            persona: Persona
+            chat_context: List[RAGChunk]
+            story_context: List[RAGChunk]
+            history: List[DialogueTurn]
+            user_message: str
+        
+        class PromptBuildOutput(BaseModel):
+            prompt: str
+            meta: Dict[str, Any] = {}
+        ```
+        
 
-E2E 모의 실행:
-```bash
-python scripts/run_local.py
-```
+## TODO
 
-인덱스 placeholder 생성:
-```bash
-python scripts/build_index.py
-```
-
-## RunPod 배포 개요
-- 엔트리: `handler.py` 의 `handler` 함수
-- 이미지 빌드시 `requirements.txt` 설치 후 `handler.py` 포함
-- 실제 LLM을 사용하려면 `src/llm/`에 HuggingFace 또는 OpenAI 호환 어댑터 추가
-
-## 확장 계획 (Next Steps)
-- [ ] 실제 벡터 스토어 (FAISS / Chroma) + 임베딩 생성 파이프라인
-- [ ] 대화 메모리(장기)와 에피소드 메모리(단기) 분리 전략
-- [ ] 프롬프트 토큰 길이 관리(슬라이싱 / 요약) 로직 추가
-- [ ] LLM 어댑터: HuggingFace Transformers / OpenAI / vLLM / Text Generation Inference 등 선택
-- [ ] Observability: 구조화 로깅 + latency 측정 + 에러 태깅
-- [ ] 캐시 전략: persona/system block 캐싱, story context 캐싱
-
-## 테스트
-기본 테스트 실행:
-```bash
-pytest -q
-```
-
-## 라이선스
-(필요 시 추가)
-
----
-문의나 수정 방향 요청 시 주석 혹은 Issue 형태로 남겨주세요.
+- `src/rag/chat_rag.py`, `src/rag/story_rag.py` 구현
+- LLM 모델 선정
+- 채팅 context를 유지하기 위해 어떤 정보들을 RAG에 활용할 수 있을지
+- 단순 채팅이 아니라 스토리 진행도 함께: Pygmalion의 `narrator` role을 활용할 수 있을지
