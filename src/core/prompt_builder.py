@@ -39,7 +39,7 @@ def _fmt_history(turns: List[DialogueTurn], char_name: str) -> str:
 def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
     p = data.persona
     system_block = SYSTEM_TEMPLATE.format(
-        name=p.name,
+        name=p.character_name,
         persona=p.persona,
         scenario=p.scenario,
         style=p.speaking_style,
@@ -48,14 +48,14 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
     examples_block = _format_examples(p)
     chat_ctx_block = CONTEXT_HEADER.format(label="CHAT", body=_fmt_chunks(data.chat_context)) if data.chat_context else ""
     story_ctx_block = CONTEXT_HEADER.format(label="STORY", body=_fmt_chunks(data.story_context)) if data.story_context else ""
-    hist_block = _fmt_history(data.history, p.name)
+    hist_block = _fmt_history(data.history, p.character_name)
 
     prompt = (
         system_block
         + examples_block
         + chat_ctx_block
         + story_ctx_block
-    + CONVERSATION_HEADER.format(history=hist_block, user=data.user_message, name=p.name)
+    + CONVERSATION_HEADER.format(history=hist_block, user=data.user_message, name=p.character_name)
     )
 
     return PromptBuildOutput(prompt=prompt, meta={
