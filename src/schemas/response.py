@@ -28,7 +28,6 @@ class RetrievalItem(BaseModel):
 
 # LLM 응답을 관리: 자연어와 embedding 결과 2개를 반환
 class ResponseContent(BaseModel):
-    role: Role = "character"                # "narrator"도 가능
     content: str                            # 생성 텍스트
     embedding: Optional[List[float]] = None # 텍스트 embedding
     character_id: Optional[UUID4] = None    # role이 "character"일 때 연결된 캐릭터

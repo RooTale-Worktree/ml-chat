@@ -78,7 +78,6 @@ def handle_chat(payload: Dict) -> Dict:
     # Generate response
     gen_result = llm.generate(prompt_out.prompt, **req.gen.model_dump())
     response_content = ResponseContent(
-        role="character",
         content=gen_result["reply"],
         embedding=embed_text(gen_result["reply"]),
         character_id=req.persona.character_id,
