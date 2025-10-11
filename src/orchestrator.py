@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Dict
 
 from src.schemas.request import ChatRequest
-from src.schemas.response import ChatResponse, Choice, RetrievalItem, ModelInfo, Usage
+from src.schemas.response import ChatResponse, ResponseContent, RetrievalItem, ModelInfo, Usage
 from src.schemas.rag import PromptBuildInput
 
 from src.core.prompt_builder import build_prompt
@@ -74,7 +74,16 @@ def handle_chat(payload: Dict) -> Dict:
         llm = _get_llm()
     else:
         raise ValueError(f"Not supported model: {model_name}")
+
+    # Generate response
     gen_result = llm.generate(prompt_out.prompt, **req.gen.model_dump())
+    response_content = ResponseContent(
+        role="character",
+        content=gen_result["reply"],
+        embedding=embed_text(gen_result["reply"]),
+        character_id=req.persona.character_id,
+        character_name=req.persona.character_name
+    )
 
     # Map retrievals to response schema
     retrieved: list[RetrievalItem] = []
@@ -118,9 +127,7 @@ def handle_chat(payload: Dict) -> Dict:
     resp = ChatResponse(
         session_id=req.session_id or "",
         responded_as="character",
-        responded_character_id=req.persona.character_id,
-        responded_character_name=req.persona.character_name,
-        choices=[Choice(role="character", content=gen_result["reply"])],
+        response_contents=[response_content],
         usage=usage,
         retrieved=retrieved,
         model_info=model_info,

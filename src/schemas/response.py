@@ -27,14 +27,14 @@ class RetrievalItem(BaseModel):
     meta: Dict[str, Any] = Field(default_factory=dict)
 
 # LLM 응답을 관리: 자연어와 embedding 결과 2개를 반환
-class Choice(BaseModel):
-    role: Role = "assistant"                # "character"도 가능
+class ResponseContent(BaseModel):
+    role: Role = "character"                # "narrator"도 가능
     content: str                            # 생성 텍스트
     embedding: Optional[List[float]] = None # 텍스트 embedding
     character_id: Optional[UUID4] = None    # role이 "character"일 때 연결된 캐릭터
     character_name: Optional[str] = None
     finish_reason: Optional[FinishReason] = None
-    safety_labels: Dict[str, Any] = Field(default_factory=dict)  # 
+    safety_labels: Dict[str, Any] = Field(default_factory=dict) # 콘텐츠 필터링 관련 메타
 
 # 실행 모델 메타 데이터
 class ModelInfo(BaseModel):
@@ -56,10 +56,8 @@ class Timing(BaseModel):
 # handler가 반환해야하는 response 형식
 class ChatResponse(BaseModel):
     session_id: str
-    responded_as: Literal["assistant", "character"] = "assistant"
-    responded_character_id: Optional[UUID4] = None
-    responded_character_name: Optional[str] = None
-    choices: List[Choice]                   # 보통 1개, 샘플링/beam 시 N개 가능
+    responded_as: Literal["narrator", "character"] = "character"
+    response_contents: List[ResponseContent]                   # 보통 1개, 샘플링/beam 시 N개 가능
     usage: Optional[Usage] = None
     retrieved: List[RetrievalItem] = Field(default_factory=list)
 
