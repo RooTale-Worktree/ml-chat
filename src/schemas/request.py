@@ -44,6 +44,14 @@ class Message(BaseModel):
     embedding_model: Optional[str] = None
     embedding_etag: Optional[str] = None
 
+    def to_dialogue_turn(self) -> DialogueTurn:
+        return DialogueTurn(
+            role=self.role,
+            content=self.content,
+            character_id=self.character_id,
+            timestamp=self.timestamp,
+        )
+
 # 채팅 기반 RAG를 위한 config
 class ChatRAGConfig(BaseModel):
     top_k_history: int = 6

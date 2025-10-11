@@ -19,8 +19,8 @@ def _format_examples(persona) -> str:
         return ""
     lines = []
     for t in persona.example_dialogue:
-        role = persona.name if t.role.lower() == "character" else "User"
-        lines.append(f"{role}: {t.text}")
+        role = persona.name if str(t.role).lower() == "character" else "User"
+        lines.append(f"{role}: {t.content}")
     return EXAMPLES_HEADER.format(examples="\n".join(lines))
 
 
@@ -32,7 +32,7 @@ def _fmt_history(turns: List[DialogueTurn], char_name: str) -> str:
     lines = []
     for t in turns:
         role = "User" if t.role == "user" else char_name
-        lines.append(f"{role}: {t.text}")
+        lines.append(f"{role}: {t.content}")
     return "\n".join(lines)
 
 
@@ -55,7 +55,7 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
         + examples_block
         + chat_ctx_block
         + story_ctx_block
-        + CONVERSATION_HEADER.format(history=hist_block, user=data.user_message, name=p.name)
+    + CONVERSATION_HEADER.format(history=hist_block, user=data.user_message, name=p.name)
     )
 
     return PromptBuildOutput(prompt=prompt, meta={

@@ -1,20 +1,22 @@
 from src.schemas.request import Persona, DialogueTurn
+import uuid
 from src.schemas.rag import RAGChunk, PromptBuildInput
 from src.core.prompt_builder import build_prompt
 
 
 def test_prompt_contains_sections():
     persona = Persona(
+        persona_id=uuid.uuid4(),
         name="Aria",
         persona="An adventurer.",
         scenario="In a desert.",
         speaking_style="Casual",
         constraints=["Stay positive"],
-        example_dialogue=[DialogueTurn(role="character", text="안녕!"), DialogueTurn(role="user", text="잘 지냈어?")]
+        example_dialogue=[DialogueTurn(role="character", content="안녕!"), DialogueTurn(role="user", content="잘 지냈어?")]
     )
     chat_ctx = [RAGChunk(id="c1", source="chat", text="user: hi", score=None)]
     story_ctx = [RAGChunk(id="s1", source="story", text="사막은 뜨거웠다", score=None)]
-    hist = [DialogueTurn(role="user", text="어제 뭐 했어?"), DialogueTurn(role="character", text="준비했지.")]
+    hist = [DialogueTurn(role="user", content="어제 뭐 했어?"), DialogueTurn(role="character", content="준비했지.")]
 
     inp = PromptBuildInput(
         persona=persona,
