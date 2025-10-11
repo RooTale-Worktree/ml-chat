@@ -13,13 +13,11 @@ Role = Literal["user", "assistant", "system", "character", "narrator"]
 class DialogueTurn(BaseModel):
     role: Role
     content: str
-    character_id: Optional[UUID4] = None
-    timestamp: Optional[datetime] = None
 
 # 캐릭터의 persona를 관리
 class Persona(BaseModel):
-    persona_id: UUID4
-    name: str
+    character_id: UUID4
+    character_name: str
     persona: str
     scenario: str
     speaking_style: str
@@ -48,15 +46,14 @@ class Message(BaseModel):
         return DialogueTurn(
             role=self.role,
             content=self.content,
-            character_id=self.character_id,
-            timestamp=self.timestamp,
         )
 
 # 채팅 기반 RAG를 위한 config
 class ChatRAGConfig(BaseModel):
     top_k_history: int = 6
     history_time_window_min: Optional[int] = None
-    min_cosine: float = 0.12
+    measure: str = "cosine"
+    threshold: float = 0.12
     allow_compute_missing: bool = False     # embedding이 비어있는 table이 있는 경우 계산
 
 # 스토리 RAG를 위해 스토리 정보를 입력으로 받음

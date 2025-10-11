@@ -5,7 +5,8 @@
   "chat_rag_config": {
     "top_k_history": 6,
     "history_time_window_min": null,
-    "min_cosine": 0.12,
+    "measure": "cosine",
+    "threshold": 0.12,
     "allow_compute_missing": false
   },
   "model": {
