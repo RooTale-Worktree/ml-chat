@@ -51,7 +51,7 @@ def handle_chat(payload: Dict) -> Dict:
         chat_rag_config=req.chat_rag_config,
         query_embedding=query_embedding,
     )
-    story_rag = retrieve_story_context()
+    story_rag = retrieve_story_context(user_query=req.message)
 
     # Build prompt
     # Normalize history to DialogueTurn for prompt builder
