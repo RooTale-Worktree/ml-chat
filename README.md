@@ -7,36 +7,41 @@
 ```
 .
 ├── data
-│   ├── indexes
-│   └── mock
-│       ├── sample_history.json
-│       ├── sample_persona.json
-│       ├── sample_request.json
-│       └── sample_story.json
+│   ├── indexes
+│   └── mock
+│       ├── sample_history.json
+│       ├── sample_persona.json
+│       ├── sample_request.json
+│       ├── sample_story.json
+│       └── vector
+│           ├── sha1:0c26aa7b21f177658276a420c390090638af6a1e.npy
+│           └── sha1:6a5009a8cd7490c2121130087542b613a7cf3a7d.npy
+├── Dockerfile
 ├── handler.py
 ├── README.md
 ├── requirements.txt
 ├── scripts
-│   └── build_index.py
+│   ├── build_index.py
+│   └── embed_history.py
 ├── src
-│   ├── config
-│   │   └── config.py
-│   ├── core
-│   │   ├── embedding.py
-│   │   └── prompt_builder.py
-│   ├── llm
-│   │   ├── mock_llm.py
-│   │   └── pygmalion_llm.py
-│   ├── orchestrator.py
-│   ├── rag
-│   │   ├── chat_rag.py
-│   │   └── story_rag.py
-│   ├── schema
-│   │   ├── embedding.py
-│   │   ├── rag.py
-│   │   ├── request.py
-│   │   └── response.py
-│   └── utils
+│   ├── config
+│   │   └── config.py
+│   ├── core
+│   │   ├── embedding.py
+│   │   └── prompt_builder.py
+│   ├── llm
+│   │   ├── mock_llm.py
+│   │   └── pygmalion_llm.py
+│   ├── orchestrator.py
+│   ├── rag
+│   │   ├── chat_rag.py
+│   │   └── story_rag.py
+│   ├── schemas
+│   │   ├── embedding.py
+│   │   ├── rag.py
+│   │   ├── request.py
+│   │   └── response.py
+│   └── utils
 └── tests
     └── test_prompt_builder.py
 ```
