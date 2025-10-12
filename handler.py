@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 from src.orchestrator import handle_chat
+import numpy as np
 
 
 # Entrypoint
@@ -47,6 +48,26 @@ if __name__ == "__main__":
     history = load_json(args.history)
     story = load_json(args.story)
     others = load_json(args.others)
+
+    # Materialize embeddings from embedding_ref (if present)
+    try:
+        if isinstance(history, list):
+            for msg in history:
+                if not isinstance(msg, dict):
+                    continue
+                ref = msg.get("embedding_ref")
+                if isinstance(ref, str) and ref:
+                    try:
+                        vec = np.load(ref).astype(float).tolist()
+                        msg["embedding"] = vec
+                    except Exception:
+                        # Leave as-is if loading fails
+                        msg["embedding"] = None
+                        pass
+                    msg.pop("embedding_ref", None)
+    except Exception:
+        # Non-fatal; proceed without embedding materialization
+        pass
 
     sample = {
         "persona": persona,

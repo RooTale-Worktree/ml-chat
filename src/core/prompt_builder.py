@@ -1,5 +1,5 @@
 """
-Prompt assembly combining persona + chat context + story context + history + user message.
+Prompt assembly combining persona + chat context + story context + recent chat + user message.
 """
 from __future__ import annotations
 from typing import List
@@ -48,7 +48,7 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
     examples_block = _format_examples(p)
     chat_ctx_block = CONTEXT_HEADER.format(label="CHAT", body=_fmt_chunks(data.chat_context)) if data.chat_context else ""
     story_ctx_block = CONTEXT_HEADER.format(label="STORY", body=_fmt_chunks(data.story_context)) if data.story_context else ""
-    hist_block = _fmt_history(data.history, p.character_name)
+    hist_block = _fmt_history(data.recent_chat, p.character_name)
 
     prompt = (
         system_block

@@ -9,10 +9,10 @@
     "timestamp": "2025-10-10T10:00:00",
     "tokens": null,
     "meta": {},
-    "embedding": null,
-    "embedding_dim": null,
-    "embedding_model": null,
-    "embedding_etag": null
+    "embedding_dim": 384,
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "embedding_etag": "sha1:0c26aa7b21f177658276a420c390090638af6a1e",
+    "embedding_ref": "data/mock/vector/sha1:0c26aa7b21f177658276a420c390090638af6a1e.npy"
   },
   {
     "chat_id": "5e4a2c3b-0d8a-4b63-9c2f-d71f3e9a1a01",
@@ -24,9 +24,9 @@
     "timestamp": "2025-10-10T10:00:02",
     "tokens": null,
     "meta": {},
-    "embedding": null,
-    "embedding_dim": null,
-    "embedding_model": null,
-    "embedding_etag": null
+    "embedding_dim": 384,
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "embedding_etag": "sha1:6a5009a8cd7490c2121130087542b613a7cf3a7d",
+    "embedding_ref": "data/mock/vector/sha1:6a5009a8cd7490c2121130087542b613a7cf3a7d.npy"
   }
 ]

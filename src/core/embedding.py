@@ -8,11 +8,7 @@ Model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 (384d)
 from __future__ import annotations
 from typing import Iterable, List
 from functools import lru_cache
-
-try:
-    from sentence_transformers import SentenceTransformer
-except Exception as e:  # pragma: no cover
-    SentenceTransformer = None  # type: ignore
+from sentence_transformers import SentenceTransformer
 
 _MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 

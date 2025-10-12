@@ -1,0 +1,12 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info
+dist/
+build/
+data/indexes/
+data/mock/
+.env

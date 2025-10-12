@@ -34,34 +34,35 @@ def handle_chat(payload: Dict) -> Dict:
     # Parse request
     req = ChatRequest(**payload)
 
-    # Persona
+    # Prompt element1: Persona
     persona = req.persona
 
-    # RAG
-    # Compute query embedding (normalized) and pass to chat RAG
+    # Compute query embedding (normalized) for RAG
     try:
         query_embedding = embed_text(req.message)
     except Exception:
         # If embedding library isn't available, continue without it
         query_embedding = None
 
+    # Prompt element2: Chatting RAG context
     chat_rag = retrieve_chat_context(
-        message=req.message,
         history=req.history,
         chat_rag_config=req.chat_rag_config,
         query_embedding=query_embedding,
     )
+
+    # Prompt element3: Story RAG context
     story_rag = retrieve_story_context()
 
-    # Build prompt
-    # Normalize history to DialogueTurn for prompt builder
+    # Prompt element4: Recent chat history
     norm_history = [h.to_dialogue_turn() for h in req.history]
 
+    # Build prompt
     prompt_input = PromptBuildInput(
         persona=persona,
         chat_context=chat_rag.context,
         story_context=story_rag.context,
-        history=norm_history,
+        recent_chat=norm_history,
         user_message=req.message
     )
     prompt_out = build_prompt(prompt_input)
