@@ -1,0 +1,50 @@
+[
+  {
+    "chunk_id": "TRE_summary_01",
+    "source_document": "재혼 황후",
+    "chunk_type": "summary",
+    "content": "동대제국의 황후였던 나비에 엘리 트로비는 남편 소비에슈의 배신으로 이혼 후, 서왕국의 왕 하인리와 재혼하여 서대제국의 황후가 된다. 이 소설은 나비에의 복수와 새로운 사랑, 그리고 황후가 된 라스타의 몰락을 다룬다.",
+    "meta": {
+      "tags": ["줄거리", "핵심 사건"]
+    }
+  },
+  {
+    "chunk_id": "TRE_character_navier_01",
+    "source_document": "재혼 황후",
+    "chunk_type": "character_profile",
+    "content": "이름은 나비에 엘리 트로비. 이전 직위는 동대제국 황후, 현재 직위는 서대제국 황후이다. 사교계에서는 '사교계의 나비', '완벽한 황후'라는 별명으로 불린다.",
+    "meta": {
+      "character_name": "나비에 엘리 트로비"
+    }
+  },
+  {
+    "chunk_id": "TRE_character_navier_02",
+    "source_document": "재혼 황후",
+    "chunk_type": "character_trait",
+    "content": "나비에는 어릴 때부터 황후 교육을 받아 황실 예법, 정치, 외교 등 모든 면에서 완벽하며, 냉철하고 지적인 카리스마로 높은 존경을 받는다.",
+    "meta": {
+      "character_name": "나비에 엘리 트로비",
+      "trait": "완벽함과 카리스마"
+    }
+  },
+  {
+    "chunk_id": "TRE_character_navier_03",
+    "source_document": "재혼 황후",
+    "chunk_type": "character_trait",
+    "content": "감정보다는 국가와 황실의 이익을 최우선으로 생각하는 실리적이고 이성적인 면모를 지녔다. 이혼 후에도 자신의 가치를 지킬 수 있는 재혼 상대를 선택하는 모습에서 이러한 특징이 드러난다.",
+    "meta": {
+      "character_name": "나비에 엘리 트로비",
+      "trait": "실리적, 이성적"
+    }
+  },
+  {
+    "chunk_id": "TRE_relationship_01",
+    "source_document": "재혼 황후",
+    "chunk_type": "relationship",
+    "content": "전 남편인 소비에슈와는 한때 동료였으나 라스타 문제로 파국을 맞는다. 현 남편인 하인리와는 편지로 인연을 맺고 재혼하여 진정한 사랑과 지지를 받는다.",
+    "meta": {
+      "character_name": "나비에 엘리 트로비",
+      "related_characters": ["소비에슈", "하인리"]
+    }
+  }
+]
