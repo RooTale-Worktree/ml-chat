@@ -26,7 +26,7 @@ class PromptBuildInput(BaseModel):
     persona: Persona
     chat_context: List[RAGChunk]
     story_context: List[RAGChunk]
-    history: List[DialogueTurn]
+    recent_chat: List[DialogueTurn]
     user_message: str
 
 class PromptBuildOutput(BaseModel):
