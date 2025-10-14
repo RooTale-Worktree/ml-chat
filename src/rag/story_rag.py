@@ -14,13 +14,22 @@ from src.config.config import settings
 
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
 def retrieve_story_context(story: List[StoryEvent], user_query: str) -> StoryRAGResult:
     
     docs: List[Document] = []
     for ev in story:
+        ev_meta = ev.meta or {}
+        for key, value in ev_meta.items():
+            if isinstance(value, str):
+                continue
+            elif isinstance(value, list):
+                ev_meta[key] = ", ".join(str(v) for v in value)
+            else:
+                raise ValueError(f"Unsupported metadata type for key '{key}': {type(value)}")
+
         docs.append(Document(
             page_content=ev.content,
             metadata={
@@ -28,7 +37,7 @@ def retrieve_story_context(story: List[StoryEvent], user_query: str) -> StoryRAG
                 "chunk_no": ev.chunk_no,
                 "chunk_type": ev.chunk_type,
                 "timestamp": ev.timestamp.isoformat() if ev.timestamp else None,
-                **ev.meta
+                **ev_meta
             }
         ))
     
