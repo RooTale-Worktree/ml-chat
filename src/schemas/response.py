@@ -18,7 +18,7 @@ class Usage(BaseModel):
 
 # RAG 단계에서 프롬프트에 넣은 컨텍스트 조각의 목록과 점수
 class RetrievalItem(BaseModel):
-    source: Literal["history", "story"]
+    source: Literal["chat_history", "story"]
     id: Optional[str] = None
     role: Optional[Role] = None             # 원본 메시지의 역할
     content: str
