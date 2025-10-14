@@ -58,7 +58,7 @@ def handle_chat(payload: Dict) -> Dict:
     )
 
     # Prompt element4: Recent chat history
-    norm_history = [h.to_dialogue_turn() for h in req.history]
+    norm_history = [h.to_dialogue_turn() for h in req.chat_history]
 
     # Build prompt
     prompt_input = PromptBuildInput(
@@ -92,7 +92,7 @@ def handle_chat(payload: Dict) -> Dict:
     retrieved: list[RetrievalItem] = []
     for idx, ch in enumerate(chat_rag.context):
         retrieved.append(RetrievalItem(
-            source="history",
+            source="chat_history",
             id=ch.id,
             role=None,
             content=ch.text,
