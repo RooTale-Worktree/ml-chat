@@ -46,11 +46,16 @@ def handle_chat(payload: Dict) -> Dict:
 
     # Prompt element2: Chatting RAG context
     chat_rag = retrieve_chat_context(
-        history=req.history,
+        chat_history=req.chat_history,
         chat_rag_config=req.chat_rag_config,
         query_embedding=query_embedding,
     )
-    story_rag = retrieve_story_context(user_query=req.message)
+
+    # Prompt element3: Story RAG context
+    story_rag = retrieve_story_context(
+        story=req.story,
+        user_query=req.message
+    )
 
     # Prompt element4: Recent chat history
     norm_history = [h.to_dialogue_turn() for h in req.history]

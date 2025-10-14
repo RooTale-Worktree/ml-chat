@@ -12,8 +12,8 @@ from src.config.config import settings
 
 _DEF_SOURCE = "chat_history"
 
-def _recent_fallback(history: List[Message], top_k: int) -> ChatRAGResult:
-    turns = [h.to_dialogue_turn() for h in history[-top_k:]]
+def _recent_fallback(chat_history: List[Message], top_k: int) -> ChatRAGResult:
+    turns = [h.to_dialogue_turn() for h in chat_history[-top_k:]]
     chunks = [
         RAGChunk(
             id=f"chat-{m.chat_id}-{m.seq_no}",
@@ -21,17 +21,17 @@ def _recent_fallback(history: List[Message], top_k: int) -> ChatRAGResult:
             text=f"{t.role}: {t.content}",
             score=None,
         )
-        for t, m in zip(turns, history[-top_k:])
+        for t, m in zip(turns, chat_history[-top_k:])
     ]
     return ChatRAGResult(context=chunks)
 
 
-def retrieve_chat_context(history: List[Message],
+def retrieve_chat_context(chat_history: List[Message],
                           chat_rag_config: ChatRAGConfig,
                           query_embedding: List[float] | None = None) -> ChatRAGResult:
     """
     args:
-        history: List[Message] - chat history messages from oldest to newest
+        chat_history: List[Message] - chat history messages from oldest to newest
         chat_rag_config: ChatRAGConfig - configuration for chat RAG retrieval
         query_embedding: List[float] | None - embedding vector of the current user message
 
@@ -42,7 +42,7 @@ def retrieve_chat_context(history: List[Message],
     Uses PyTorch if available, otherwise NumPy for vector similarity search.
     """
 
-    items: List[Message] = history
+    items: List[Message] = chat_history
     if chat_rag_config.history_time_window_min:
         cutoff = datetime.now(timezone.utc) - timedelta(minutes=chat_rag_config.history_time_window_min)
         items = [m for m in items if m.timestamp and m.timestamp >= cutoff]

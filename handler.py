@@ -22,22 +22,45 @@ def handler(event):
     return handle_chat(payload)
 
 
-# For local manual test
+"""
+For local manual test
+"""
 def load_json(path: str):
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"Json file not found: {path}")
     with p.open("r", encoding="utf-8") as f:
         return json.load(f)
-
+    
+def load_vector(contents: list):
+    # Materialize embeddings from embedding_ref (if present)
+    try:
+        if isinstance(contents, list):
+            for content in contents:
+                if (not isinstance(content, dict)) or ("content" not in content):
+                    continue
+                ref = content.get("embedding_ref")
+                if isinstance(ref, str) and ref:
+                    try:
+                        vec = np.load(ref).astype(float).tolist()
+                        content["embedding"] = vec
+                    except Exception:
+                        # Leave as-is if loading fails
+                        content["embedding"] = None
+                        pass
+                    content.pop("embedding_ref", None)
+    except Exception:
+        # Non-fatal; proceed without embedding materialization
+        pass
+    return contents
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--persona", type=str,
                         default="./data/mock/sample_persona.json", help="mock up persona")
-    parser.add_argument("--history", type=str,
-                        default="./data/mock/sample_history.json", help="mock up message history")
+    parser.add_argument("--chat_history", type=str,
+                        default="./data/mock/sample_chat_history.json", help="mock up message chat history")
     parser.add_argument("--story", type=str,
                         default="./data/mock/sample_story.json", help="mock up story")
     parser.add_argument("--others", type=str,
@@ -45,36 +68,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     persona = load_json(args.persona)
-    history = load_json(args.history)
-    story = load_json(args.story)
+    chat_history = load_vector(load_json(args.chat_history))
+    story = load_vector(load_json(args.story))
     others = load_json(args.others)
 
-    # Materialize embeddings from embedding_ref (if present)
-    try:
-        if isinstance(history, list):
-            for msg in history:
-                if not isinstance(msg, dict):
-                    continue
-                ref = msg.get("embedding_ref")
-                if isinstance(ref, str) and ref:
-                    try:
-                        vec = np.load(ref).astype(float).tolist()
-                        msg["embedding"] = vec
-                    except Exception:
-                        # Leave as-is if loading fails
-                        msg["embedding"] = None
-                        pass
-                    msg.pop("embedding_ref", None)
-    except Exception:
-        # Non-fatal; proceed without embedding materialization
-        pass
-
+    # structure sample request
     sample = {
         "persona": persona,
-        "history": history,
+        "chat_history": chat_history,
         "story": story,
         **others
     }
+
+    # call handler function
     out = handler({"input": sample})
+
     from pprint import pprint
     pprint(out)

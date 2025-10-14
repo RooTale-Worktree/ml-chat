@@ -8,24 +8,29 @@ from pathlib import Path
 import json
 from typing import List
 
+from src.schemas.request import StoryEvent
 from src.schemas.rag import RAGChunk, StoryRAGResult
 from src.config.config import settings
 
-from langchain_community.document_loaders import JSONLoader
+from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
-def retrieve_story_context(user_query: str) -> StoryRAGResult:
+def retrieve_story_context(story: List[StoryEvent], user_query: str) -> StoryRAGResult:
     
-    file_path = 'data/mock/sample_The_Remarried_Empress.json'
-    jq_schema = '.[].content'
-    loader = JSONLoader(
-        file_path=file_path,
-        jq_schema=jq_schema,
-        text_content=False 
-    )
-    docs = loader.load()
+    docs: List[Document] = []
+    for ev in story:
+        docs.append(Document(
+            page_content=ev.content,
+            metadata={
+                "story_id": str(ev.story_id),
+                "chunk_no": ev.chunk_no,
+                "chunk_type": ev.chunk_type,
+                "timestamp": ev.timestamp.isoformat() if ev.timestamp else None,
+                **ev.meta
+            }
+        ))
     
     embeddings = HuggingFaceEmbeddings(model_name="jhgan/ko-sbert-nli")
     vectorstore = Chroma.from_documents(documents=docs, embedding=embeddings)
