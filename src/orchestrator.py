@@ -2,10 +2,11 @@
 High-level orchestration: combines RAG + persona + LLM.
 """
 from __future__ import annotations
+import time
 from typing import Dict
 
 from src.schemas.request import ChatRequest
-from src.schemas.response import ChatResponse, ResponseContent, RetrievalItem, ModelInfo, Usage
+from src.schemas.response import ChatResponse, ResponseContent, RetrievalItem, ModelInfo, Usage, Timing
 from src.schemas.rag import PromptBuildInput
 
 from src.core.prompt_builder import build_prompt
@@ -31,6 +32,9 @@ def _get_llm():
 
 
 def handle_chat(payload: Dict) -> Dict:
+
+    start_time = time.time()
+
     # Parse request
     req = ChatRequest(**payload)
 
@@ -38,29 +42,36 @@ def handle_chat(payload: Dict) -> Dict:
     persona = req.persona
 
     # Compute query embedding (normalized) for RAG
+    t_embed_start = time.time()
     try:
         query_embedding = embed_text(req.message)
     except Exception:
         # If embedding library isn't available, continue without it
         query_embedding = None
+    embed_ms = int((time.time() - t_embed_start) * 1000)
 
     # Prompt element2: Chatting RAG context
+    t_chat_retr_start = time.time()
     chat_rag = retrieve_chat_context(
         chat_history=req.chat_history,
         chat_rag_config=req.chat_rag_config,
         query_embedding=query_embedding,
     )
+    chat_retrieve_ms = int((time.time() - t_chat_retr_start) * 1000)
 
     # Prompt element3: Story RAG context
+    t_story_retr_start = time.time()
     story_rag = retrieve_story_context(
         story=req.story,
         user_query=req.message
     )
+    story_retrieve_ms = int((time.time() - t_story_retr_start) * 1000)
 
     # Prompt element4: Recent chat history
     norm_history = [h.to_dialogue_turn() for h in req.chat_history]
 
     # Build prompt
+    t_prompt_start = time.time()
     prompt_input = PromptBuildInput(
         persona=persona,
         chat_context=chat_rag.context,
@@ -69,6 +80,7 @@ def handle_chat(payload: Dict) -> Dict:
         user_message=req.message
     )
     prompt_out = build_prompt(prompt_input)
+    prompt_build_ms = int((time.time() - t_prompt_start) * 1000)
 
     # LLM generate
     model_name = req.model.name if req.model else None
@@ -80,10 +92,21 @@ def handle_chat(payload: Dict) -> Dict:
         raise ValueError(f"Not supported model: {model_name}")
 
     # Generate response
+    t_gen_start = time.time()
     gen_result = llm.generate(prompt_out.prompt, **req.gen.model_dump())
+    generate_ms = int((time.time() - t_gen_start) * 1000)
+    # Optionally embed response content (not counted in embed_ms; reported separately in meta)
+    t_resp_embed_start = time.time()
+    resp_embedding = None
+    try:
+        resp_embedding = embed_text(gen_result["reply"])
+    except Exception:
+        resp_embedding = None
+    response_embed_ms = int((time.time() - t_resp_embed_start) * 1000)
+
     response_content = ResponseContent(
         content=gen_result["reply"],
-        embedding=embed_text(gen_result["reply"]),
+        embedding=resp_embedding,
         character_id=req.persona.character_id,
         character_name=req.persona.character_name
     )
@@ -127,6 +150,19 @@ def handle_chat(payload: Dict) -> Dict:
         embedding_model="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     )
 
+    total_ms = int((time.time() - start_time) * 1000)
+    timing = Timing(
+        queued_ms=None,
+        embed_ms=embed_ms,
+        retrieve_ms={
+            "chat_retrieve_ms": chat_retrieve_ms,
+            "story_retrieve_ms": story_retrieve_ms
+        },
+        prompt_build_ms=prompt_build_ms,
+        generate_ms=generate_ms,
+        total_ms=total_ms,
+    )
+
     resp = ChatResponse(
         session_id=req.session_id or "",
         responded_as="character",
@@ -134,6 +170,7 @@ def handle_chat(payload: Dict) -> Dict:
         usage=usage,
         retrieved=retrieved,
         model_info=model_info,
+        timing=timing,
         meta={
             "prompt": prompt_out.prompt,
             "prompt_meta": prompt_out.meta,

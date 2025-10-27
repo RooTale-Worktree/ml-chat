@@ -47,10 +47,10 @@ class ModelInfo(BaseModel):
 class Timing(BaseModel):
     queued_ms: Optional[int] = None
     embed_ms: Optional[int] = None
-    retrieve_ms: Optional[int] = None
+    retrieve_ms: Optional[Dict[str, int]] = None
     prompt_build_ms: Optional[int] = None
     generate_ms: Optional[int] = None
-    total_ms: Optional[int] = None          # LLM 응답에서 부적절 또는 금칙어 등이 포함되어 있는지 여부
+    total_ms: Optional[int] = None
 
 # handler가 반환해야하는 response 형식
 class ChatResponse(BaseModel):

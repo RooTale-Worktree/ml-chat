@@ -4,6 +4,11 @@ RunPod serverless의 handler entrypoint.
 
 local manual test 사용법:
     python -m handler
+    CLI 옵션:
+        --persona: mock-up persona 정보가 저장된 파일 경로를 지정합니다.
+        --chat_history: mock-up chat history 정보가 저장된 파일 경로를 지정합니다. List[Dict]
+        --story: mock-up story 정보가 저장된 파일 경로를 지정합니다. List[Dict]
+        --others: 그 외의 ChatRequest 정보가 저장된 mock-up 파일 경로를 지정합니다.
 """
 from __future__ import annotations
 import argparse
@@ -38,7 +43,7 @@ def load_vector(contents: list):
         if isinstance(contents, list):
             for content in contents:
                 if (not isinstance(content, dict)) or ("content" not in content):
-                    continue
+                   continue
                 ref = content.get("embedding_ref")
                 if isinstance(ref, str) and ref:
                     try:
