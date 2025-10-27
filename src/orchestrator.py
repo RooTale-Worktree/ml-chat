@@ -38,17 +38,17 @@ def handle_chat(payload: Dict) -> Dict:
     # Parse request
     req = ChatRequest(**payload)
 
-    # Prompt element1: Persona
-    persona = req.persona
-
     # Compute query embedding (normalized) for RAG
-    t_embed_start = time.time()
+    t_message_embed_start = time.time()
     try:
         query_embedding = embed_text(req.message)
     except Exception:
         # If embedding library isn't available, continue without it
         query_embedding = None
-    embed_ms = int((time.time() - t_embed_start) * 1000)
+    message_embed_ms = int((time.time() - t_message_embed_start) * 1000)
+
+    # Prompt element1: Persona
+    persona = req.persona
 
     # Prompt element2: Chatting RAG context
     t_chat_retr_start = time.time()
@@ -57,7 +57,7 @@ def handle_chat(payload: Dict) -> Dict:
         chat_rag_config=req.chat_rag_config,
         query_embedding=query_embedding,
     )
-    chat_retrieve_ms = int((time.time() - t_chat_retr_start) * 1000)
+    chat_retr_ms = int((time.time() - t_chat_retr_start) * 1000)
 
     # Prompt element3: Story RAG context
     t_story_retr_start = time.time()
@@ -65,13 +65,12 @@ def handle_chat(payload: Dict) -> Dict:
         story=req.story,
         user_query=req.message
     )
-    story_retrieve_ms = int((time.time() - t_story_retr_start) * 1000)
+    story_retr_ms = int((time.time() - t_story_retr_start) * 1000)
 
     # Prompt element4: Recent chat history
     norm_history = [h.to_dialogue_turn() for h in req.chat_history]
 
     # Build prompt
-    t_prompt_start = time.time()
     prompt_input = PromptBuildInput(
         persona=persona,
         chat_context=chat_rag.context,
@@ -80,9 +79,9 @@ def handle_chat(payload: Dict) -> Dict:
         user_message=req.message
     )
     prompt_out = build_prompt(prompt_input)
-    prompt_build_ms = int((time.time() - t_prompt_start) * 1000)
 
     # LLM generate
+    t_llm_load_start = time.time()
     model_name = req.model.name if req.model else None
     if model_name == "mock_llm":
         llm = MockLLM()
@@ -90,11 +89,13 @@ def handle_chat(payload: Dict) -> Dict:
         llm = _get_llm()
     else:
         raise ValueError(f"Not supported model: {model_name}")
+    llm_load_ms = int((time.time() - t_llm_load_start) * 1000)
 
     # Generate response
     t_gen_start = time.time()
     gen_result = llm.generate(prompt_out.prompt, **req.gen.model_dump())
     generate_ms = int((time.time() - t_gen_start) * 1000)
+
     # Optionally embed response content (not counted in embed_ms; reported separately in meta)
     t_resp_embed_start = time.time()
     resp_embedding = None
@@ -152,15 +153,15 @@ def handle_chat(payload: Dict) -> Dict:
 
     total_ms = int((time.time() - start_time) * 1000)
     timing = Timing(
-        queued_ms=None,
-        embed_ms=embed_ms,
-        retrieve_ms={
-            "chat_retrieve_ms": chat_retrieve_ms,
-            "story_retrieve_ms": story_retrieve_ms
-        },
-        prompt_build_ms=prompt_build_ms,
-        generate_ms=generate_ms,
         total_ms=total_ms,
+        message_embed_ms=message_embed_ms,
+        response_embed_ms=response_embed_ms,
+        rag_retr_ms={
+            "chat_retr_ms": chat_retr_ms,
+            "story_retr_ms": story_retr_ms
+        },
+        llm_load_ms=llm_load_ms,
+        generate_ms=generate_ms,
     )
 
     resp = ChatResponse(

@@ -45,12 +45,12 @@ class ModelInfo(BaseModel):
 
 # 응답 생성 메타 데이터
 class Timing(BaseModel):
-    queued_ms: Optional[int] = None
-    embed_ms: Optional[int] = None
-    retrieve_ms: Optional[Dict[str, int]] = None
-    prompt_build_ms: Optional[int] = None
-    generate_ms: Optional[int] = None
     total_ms: Optional[int] = None
+    message_embed_ms: Optional[int] = None
+    response_embed_ms: Optional[int] = None
+    rag_retr_ms: Optional[Dict[str, int]] = None
+    llm_load_ms: Optional[int] = None
+    generate_ms: Optional[int] = None
 
 # handler가 반환해야하는 response 형식
 class ChatResponse(BaseModel):
