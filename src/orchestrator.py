@@ -15,20 +15,39 @@ from src.rag.story_rag import retrieve_story_context
 from src.core.embedding import embed_text
 
 from src.llm.pygmalion_llm import PygmalionLLM
+from src.llm.gpt_oss_llm import load_gpt_oss_llm
 from src.llm.mock_llm import MockLLM
 from src.config.config import settings
 
-_llm_singleton = None
+_llm_cache: Dict[str, object] = {}
 
-def _get_llm():
+def _get_llm(model_name: str | None, model_cfg):
     """
-    Lazy-load singleton Pygmalion model.
-    In the future we could branch based on settings.env or a flag to use mock.
+    Lazy-load singleton adapters per model name.
     """
-    global _llm_singleton
-    if _llm_singleton is None:
-        _llm_singleton = PygmalionLLM(settings.default_model_id)
-    return _llm_singleton
+    normalized = (model_name or "pygmalion-6b").lower()
+    if normalized == "mock_llm":
+        return MockLLM()
+
+    if normalized == "pygmalion-6b":
+        if normalized not in _llm_cache:
+            _llm_cache[normalized] = PygmalionLLM(settings.default_model_id)
+        return _llm_cache[normalized]
+
+    if normalized == "gpt-oss":
+        repo_id = settings.gpt_oss_model_id
+        if not repo_id:
+            raise ValueError("gpt_oss_model_id is not configured in settings/environment.")
+        device_map = getattr(model_cfg, "device", "auto") if model_cfg else "auto"
+        cache_key = f"gpt_oss::{repo_id}::{device_map}"
+        if cache_key not in _llm_cache:
+            _llm_cache[cache_key] = load_gpt_oss_llm(
+                model_id=repo_id,
+                device_map=device_map,
+            )
+        return _llm_cache[cache_key]
+
+    raise ValueError(f"Not supported model: {model_name}")
 
 
 def handle_chat(payload: Dict) -> Dict:
@@ -83,12 +102,7 @@ def handle_chat(payload: Dict) -> Dict:
     # LLM generate
     t_llm_load_start = time.time()
     model_name = req.model.name if req.model else None
-    if model_name == "mock_llm":
-        llm = MockLLM()
-    elif model_name == "pygmalion-6b":
-        llm = _get_llm()
-    else:
-        raise ValueError(f"Not supported model: {model_name}")
+    llm = _get_llm(model_name, req.model)
     llm_load_ms = int((time.time() - t_llm_load_start) * 1000)
 
     # Generate response
@@ -143,9 +157,10 @@ def handle_chat(payload: Dict) -> Dict:
         total_tokens=usage_dict.get("prompt_tokens", 0) + usage_dict.get("completion_tokens", 0)
     )
 
+    model_repo_name = getattr(llm, "model_id", model_name or settings.default_model_id)
     model_info = ModelInfo(
         provider="local",
-        name=settings.default_model_id,
+        name=model_repo_name,
         context_length=req.model.context_length,
         dtype=req.model.dtype,
         embedding_model="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
