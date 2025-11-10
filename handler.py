@@ -72,9 +72,12 @@ if __name__ == "__main__":
                         default="./data/mock/sample_request.json", help="other request metas")
     args = parser.parse_args()
 
+    path_chat_history = None if args.chat_history == "" else args.chat_history
+    path_story = None if args.story == "" else args.story
+
     persona = load_json(args.persona)
-    chat_history = load_vector(load_json(args.chat_history))
-    story = load_vector(load_json(args.story))
+    chat_history = load_vector(load_json(path_chat_history)) if path_chat_history else []
+    story = load_vector(load_json(path_story)) if path_story else []
     others = load_json(args.others)
 
     # structure sample request
