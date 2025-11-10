@@ -51,7 +51,6 @@ class GPTOssLLM:
             "torch_dtype": dtype,
             "device_map": device_map,
             "trust_remote_code": trust_remote_code,
-            "load_in_4bit": True
         }
         if attn_implementation:
             model_kwargs["attn_implementation"] = attn_implementation
