@@ -17,9 +17,11 @@ def get_prompt(model_name: str | None, data: PromptBuildInput) -> PromptBuildOut
     """
     if model_name is None or model_name == "mock_llm":
         return None
+    
     elif model_name == "pygmalion-6b":
         return build_pygmalion_prompt(data)
-    elif model_name == "gpt-oss":
+    
+    elif model_name == "gpt-oss-20b":
         return build_gpt_oss_prompt(data)
     
     raise ValueError(f"Not supported model for prompt building: {model_name}")

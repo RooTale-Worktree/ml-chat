@@ -46,6 +46,6 @@ def test_pygmalion_prompt_contains_sections():
 
 
 def test_gpt_oss_prompt_uses_instruction_blocks():
-    out = get_prompt("gpt-oss", _prompt_input())
+    out = get_prompt("gpt-oss-20b", _prompt_input())
     assert "### Instruction" in out.prompt
     assert "### Conversation" in out.prompt
