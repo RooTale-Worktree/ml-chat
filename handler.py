@@ -68,6 +68,7 @@ if __name__ == "__main__":
                         default="./data/mock/sample_chat_history.json", help="mock up message chat history")
     parser.add_argument("--story", type=str,
                         default="./data/mock/sample_story.json", help="mock up story")
+    parser.add_argument("--message", type=str, default="안녕, 오늘 기분 어때?", help="user message")
     parser.add_argument("--others", type=str,
                         default="./data/mock/sample_request.json", help="other request metas")
     args = parser.parse_args()
@@ -85,6 +86,7 @@ if __name__ == "__main__":
         "persona": persona,
         "chat_history": chat_history,
         "story": story,
+        "message": args.message,
         **others
     }
 
