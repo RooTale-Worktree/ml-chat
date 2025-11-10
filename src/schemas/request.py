@@ -8,7 +8,8 @@ from datetime import datetime
 
 
 Role = Literal["user", "assistant", "system", "character", "narrator"]
-chunk_type = Literal["summary", "character_profile", "character_trait", "relationship"]
+chunk_type = Literal["summary", "character_profile", "character_list",
+                     "location_info", "character_trait"]
 
 # persona에서 예시 대화를 관리하기 위한 table
 class DialogueTurn(BaseModel):
@@ -92,9 +93,9 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
     user_id: Optional[str] = None
     persona: Persona
-    chat_history: List[Message] = Field(default_factory=list)
+    chat_history: Optional[List[Message]] = Field(default=None)
     chat_rag_config: ChatRAGConfig = Field(default_factory=ChatRAGConfig)
-    story: List[StoryEvent] = Field(default_factory=list)
+    story: Optional[List[StoryEvent]] = Field(default=None)
     model: ModelConfig = Field(default_factory=ModelConfig)
     gen: GenConfig = Field(default_factory=GenConfig)
     meta: Dict[str, Any] = Field(default_factory=dict)
