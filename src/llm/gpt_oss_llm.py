@@ -10,6 +10,7 @@ from typing import Dict, List, Sequence
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from src.config.config import settings
 
 _DEFAULT_STOP_STRINGS: List[str] = ["\nUser:", "\nUSER:", "\n사용자:", "\n"]
 
@@ -17,10 +18,10 @@ _DEFAULT_STOP_STRINGS: List[str] = ["\nUser:", "\nUSER:", "\n사용자:", "\n"]
 class GPTOssLLM:
     def __init__(
         self,
-        model_id: str,
+        model_id: str | None = None,
         device_map: str | None = "auto",
         attn_implementation: str | None = None,
-        trust_remote_code: bool = False,
+        trust_remote_code: bool = True,
     ):
         """
         Args:
@@ -29,6 +30,8 @@ class GPTOssLLM:
             attn_implementation: Optional attention backend hint (e.g., "flash_attention_2").
             trust_remote_code: Whether to allow custom modeling code from the repo.
         """
+        model_id = model_id or settings.gpt_oss_model_id
+
         if torch.cuda.is_available():
             dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         else:
@@ -117,10 +120,10 @@ class GPTOssLLM:
 
 @lru_cache(maxsize=2)
 def load_gpt_oss_llm(
-    model_id: str,
+    model_id: str | None = None,
     device_map: str | None = "auto",
     attn_implementation: str | None = None,
-    trust_remote_code: bool = False,
+    trust_remote_code: bool = True,
 ) -> GPTOssLLM:
     """
     Cached factory so orchestrator can re-use heavyweight GPT-OSS weights.
