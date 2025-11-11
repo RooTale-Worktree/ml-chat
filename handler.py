@@ -92,7 +92,7 @@ if __name__ == "__main__":
     out = handler({"input": sample})
 
     # to check model output
-    model_reply = out.get("response_contents", [{}])[0].get("content", "<no content>")
+    model_reply = out.get("response_contents", {}).get("content", "<no content>")
     model_prompt = out.get("meta", {}).get("prompt", "<no prompt>")
     timing = out.get("timing", {})
 
