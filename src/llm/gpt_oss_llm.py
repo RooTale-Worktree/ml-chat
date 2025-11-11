@@ -12,11 +12,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from src.config.config import settings
 
-_DEFAULT_STOP_STRINGS: List[str] = [
-    "\nUser:",
-    "\nUSER:",
-    "\n사용자:",
-]
+_DEFAULT_STOP_STRINGS: List[str] = ["\nUser:", "\nUSER:", "\n사용자:", "\n"]
 
 
 class GPTOssLLM:
@@ -38,11 +34,6 @@ class GPTOssLLM:
 
         if torch.cuda.is_available():
             dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-            try:
-                torch.backends.cuda.matmul.allow_tf32 = True
-                torch.set_float32_matmul_precision("high")
-            except Exception:
-                pass
         else:
             dtype = torch.float32
             device_map = None
@@ -61,7 +52,8 @@ class GPTOssLLM:
             "device_map": device_map,
             "trust_remote_code": trust_remote_code,
         }
-        model_kwargs["attn_implementation"] = attn_implementation
+        if attn_implementation:
+            model_kwargs["attn_implementation"] = attn_implementation
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_id,
@@ -108,9 +100,9 @@ class GPTOssLLM:
                 eos_token_id=self.tokenizer.eos_token_id,
                 pad_token_id=self.tokenizer.pad_token_id,
             )
-        # 입력 길이 이후의 생성 토큰만 디코드 (문자열 길이로 자르지 않음)
-        gen_only_ids = out_ids[0, input_ids.shape[1]:]
-        generated = self.tokenizer.decode(gen_only_ids, skip_special_tokens=True)
+
+        decoded = self.tokenizer.decode(out_ids[0], skip_special_tokens=True)
+        generated = decoded[len(prompt):]
         reply, stop_reason = self._trim(generated, stop_sequences)
         reply = reply if reply else "(…생각 중…)"
 
