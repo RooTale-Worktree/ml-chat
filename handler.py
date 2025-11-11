@@ -27,9 +27,7 @@ def handler(event):
     return handle_chat(payload)
 
 
-"""
-For local manual test
-"""
+# For local manual test
 def load_json(path: str):
     p = Path(path)
     if not p.exists():
@@ -93,5 +91,17 @@ if __name__ == "__main__":
     # call handler function
     out = handler({"input": sample})
 
-    from pprint import pprint
-    pprint(out)
+    # to check model output
+    try:
+        # response_contents는 List이므로 첫 번째 아이템의 content를 출력
+        first_content = (
+            out.get("response_contents", [{}])[0].get("content")
+            if isinstance(out, dict) else None
+        )
+        print("\n[Model Reply]\n" + (first_content or "<no content>"))
+        # timing 전체 출력 (ms 단위 세부 항목 포함)
+        timing = out.get("timing", {}) if isinstance(out, dict) else {}
+        print("\n[Timing ms]\n" + json.dumps(timing, ensure_ascii=False, indent=2))
+    except Exception as e:
+        print(f"[Print Error] {e}")
+    
