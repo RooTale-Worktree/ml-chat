@@ -56,7 +56,7 @@ class Timing(BaseModel):
 class ChatResponse(BaseModel):
     session_id: str
     responded_as: Literal["narrator", "character"] = "character"
-    response_contents: List[ResponseContent]                   # 보통 1개, 샘플링/beam 시 N개 가능
+    response_contents: ResponseContent                   # 보통 1개, 샘플링/beam 시 N개 가능
     usage: Optional[Usage] = None
     retrieved: List[RetrievalItem] = Field(default_factory=list)
 

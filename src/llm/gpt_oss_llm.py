@@ -20,7 +20,7 @@ class GPTOssLLM:
         self,
         model_id: str | None = None,
         device_map: str | None = "auto",
-        attn_implementation: str | None = None,
+        attn_implementation: str | None = "flash_attention_2",
         trust_remote_code: bool = True,
     ):
         """

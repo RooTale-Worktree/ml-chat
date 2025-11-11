@@ -165,7 +165,7 @@ def handle_chat(payload: Dict) -> Dict:
     resp = ChatResponse(
         session_id=req.session_id or "",
         responded_as="character",
-        response_contents=[response_content],
+        response_contents=response_content,
         usage=usage,
         retrieved=retrieved,
         model_info=model_info,
