@@ -1,6 +1,7 @@
 .env
 .venv
 .vscode/
+local_implement.txt
 
 
 # Python cache
