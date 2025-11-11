@@ -48,7 +48,7 @@ class GPTOssLLM:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         model_kwargs = {
-            "torch_dtype": dtype,
+            "dtype": dtype,
             "device_map": device_map,
             "trust_remote_code": trust_remote_code,
         }

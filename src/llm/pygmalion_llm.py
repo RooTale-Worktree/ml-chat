@@ -25,7 +25,7 @@ class PygmalionLLM:
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_id,
-            torch_dtype=dtype,
+            dtype=dtype,
             device_map=device_map,
         )
         self.model.eval()

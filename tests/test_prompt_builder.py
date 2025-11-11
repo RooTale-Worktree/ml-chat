@@ -47,6 +47,6 @@ def test_pygmalion_prompt_contains_sections():
 
 def test_gpt_oss_prompt_uses_instruction_blocks():
     out = get_prompt("gpt-oss-20b", _prompt_input())
-    assert "### System" in out.prompt
-    assert "### Persona Profile" in out.prompt
-    assert "### Assistant Response" in out.prompt
+    assert "<|start|>system<|message|>" in out.prompt
+    assert "<|start|>developer<|message|># Instructions" in out.prompt
+    assert "<|start|>assistant" in out.prompt.splitlines()[-1]

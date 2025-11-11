@@ -29,25 +29,26 @@ def get_llm(model_name: str | None, model_cfg: ModelConfig | None = None):
         return MockLLM()
     
     elif model_name == "pygmalion-6b":
+        repo_id = settings.pygmalion_model_id
         device_map = _device_map(model_cfg)
-        cache_key = f"pygmalion::{settings.default_model_id}::{device_map}"
+        cache_key = f"pygmalion::{repo_id}::{device_map}"
         if cache_key not in _LLM_CACHE:
             _LLM_CACHE[cache_key] = PygmalionLLM(
-                model_id=settings.default_model_id,
+                model_id=repo_id,
                 device_map=device_map,
             )
         return _LLM_CACHE[cache_key]
     
     elif model_name == "gpt-oss-20b":
         repo_id = settings.gpt_oss_model_id
-        if not repo_id:
-            raise ValueError("gpt_oss_model_id is not configured.")
         device_map = _device_map(model_cfg)
-        return load_gpt_oss_llm(
-            model_id=repo_id,
-            device_map=device_map,
-        )
-
+        cache_key = f"gpt-oss::{repo_id}::{device_map}"
+        if cache_key not in _LLM_CACHE:
+            _LLM_CACHE[cache_key] = load_gpt_oss_llm(
+                model_id=repo_id,
+                device_map=device_map,
+            )
+        return _LLM_CACHE[cache_key]
     raise ValueError(f"Not supported model: {model_name}")
 
 
