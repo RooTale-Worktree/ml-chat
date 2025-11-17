@@ -1,41 +1,37 @@
 """
-GPT-OSS LLM adapter using vLLM for high-performance inference.
-
-vLLM provides optimized inference with PagedAttention, continuous batching,
-and efficient memory management for faster throughput compared to vanilla transformers.
+EEVE-Korean-10.8B LLM adapter using vLLM for high-performance inference.
 """
 from __future__ import annotations
 from functools import lru_cache
 from typing import Dict, List, Sequence
 
 from vllm import LLM, SamplingParams
-from src.config.config import settings
+# from src.config.config import settings
 
-_DEFAULT_STOP_STRINGS: List[str] = ["USER:", "\nUSER:"]
+# ❗ [변경] EEVE(ChatML) 템플릿은 <|im_end|>로 답변을 종료합니다.
+_DEFAULT_STOP_STRINGS: List[str] = ["<|im_end|>", "<|im_start|>"]
 
 
-class GPTOssLLM:
+class EeveeLLM:
     def __init__(
         self,
-        model_id: str = "openai/gpt-oss-20b",
+        model_id: str = "yanolja/YanoljaNEXT-EEVE-Instruct-10.8B",
         tensor_parallel_size: int = 1,
         gpu_memory_utilization: float = 0.9,
-        max_model_len: int = 1024,
+        max_model_len: int | None = None,
         trust_remote_code: bool = True,
-        dtype: str = "auto",
+        dtype: str = "bfloat16",
     ):
         """
         Args:
-            model_id: HuggingFace repo id for GPT-OSS variant.
+            model_id: HuggingFace repo id for EEVE model.
             tensor_parallel_size: Number of GPUs for tensor parallelism.
             gpu_memory_utilization: Fraction of GPU memory to use (0.0-1.0).
-            max_model_len: Maximum sequence length (None = auto-detect from model config).
-            trust_remote_code: Whether to allow custom modeling code from the repo.
+            max_model_len: Maximum sequence length (None = auto-detect).
+            trust_remote_code: Whether to allow custom modeling code.
         """
-        model_id = model_id or settings.gpt_oss_model_id
         self.model_id = model_id
 
-        # vLLM automatically handles device placement and optimization
         self.llm = LLM(
             model=model_id,
             tensor_parallel_size=tensor_parallel_size,
@@ -46,13 +42,16 @@ class GPTOssLLM:
         )
 
     def generate(self, prompt: str, **gen) -> Dict:
+        """
+        Generates a response from a pre-formatted prompt string.
+        (This class expects the prompt to be *already* built)
+        """
         max_new_tokens = int(gen.get("max_new_tokens", 1024))
-        temperature = float(gen.get("temperature", 0.8))
-        top_p = float(gen.get("top_p", 0.95))
-        repetition_penalty = float(gen.get("repetition_penalty", 1.05))
+        temperature = float(gen.get("temperature", 0.7))
+        top_p = float(gen.get("top_p", 0.9))
+        repetition_penalty = float(gen.get("repetition_penalty", 1.0))
         stop_sequences = _DEFAULT_STOP_STRINGS
 
-        # vLLM SamplingParams
         sampling_params = SamplingParams(
             max_tokens=max_new_tokens,
             temperature=temperature,
@@ -61,18 +60,15 @@ class GPTOssLLM:
             stop=stop_sequences,
         )
 
-        # Generate (vLLM handles batching internally)
         outputs = self.llm.generate([prompt], sampling_params)
         output = outputs[0]
         
-        # Extract generated text
         generated = output.outputs[0].text
         reply = generated.strip() if generated.strip() else "(…생각 중…)"
         
-        # vLLM provides token counts
         prompt_tokens = len(output.prompt_token_ids)
         completion_tokens = len(output.outputs[0].token_ids)
-        finish_reason = output.outputs[0].finish_reason  # 'stop', 'length', etc.
+        finish_reason = output.outputs[0].finish_reason
 
         usage = {
             "prompt_tokens": prompt_tokens,
@@ -87,24 +83,17 @@ class GPTOssLLM:
 
 
 @lru_cache(maxsize=2)
-def load_gpt_oss_llm(
-    model_id: str | None = None,
+def load_eeve_llm(
+    model_id: str | None = "yanolja/YanoljaNEXT-EEVE-Instruct-10.8B",
     tensor_parallel_size: int = 1,
     gpu_memory_utilization: float = 0.9,
     max_model_len: int | None = None,
     trust_remote_code: bool = True,
-) -> GPTOssLLM:
+) -> EeveeLLM:
     """
-    Cached factory so orchestrator can re-use heavyweight GPT-OSS vLLM instance.
-    
-    Args:
-        model_id: HuggingFace repo id.
-        tensor_parallel_size: Number of GPUs for tensor parallelism (default: 1).
-        gpu_memory_utilization: GPU memory fraction (0.0-1.0, default: 0.9).
-        max_model_len: Max sequence length (None = auto from model config).
-        trust_remote_code: Allow custom modeling code.
+    Cached factory to re-use the heavyweight EEVE vLLM instance.
     """
-    return GPTOssLLM(
+    return EeveeLLM(
         model_id=model_id,
         tensor_parallel_size=tensor_parallel_size,
         gpu_memory_utilization=gpu_memory_utilization,
@@ -113,4 +102,4 @@ def load_gpt_oss_llm(
     )
 
 
-__all__ = ["GPTOssLLM", "load_gpt_oss_llm"]
+__all__ = ["EeveeLLM", "load_eeve_llm"]

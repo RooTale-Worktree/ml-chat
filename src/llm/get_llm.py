@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from src.config.config import settings
 from src.llm.gpt_oss_llm import load_gpt_oss_llm
+from src.llm.solar_llm import load_solar_llm
+from src.llm.eeve_llm import load_eeve_llm
 
 
 def get_llm(model_name: str | None, model_cfg: dict | None = None):
@@ -21,6 +23,7 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
         gpu_mem_util = model_cfg.get("gpu_memory_utilization", 0.9)
         max_model_len = model_cfg.get("max_model_len", 1024)
         trust_remote_code = model_cfg.get("trust_remote_code", True)
+        dtype = model_cfg.get("dtype", "auto")
         
         return load_gpt_oss_llm(
             model_id=repo_id,
@@ -28,6 +31,39 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
             gpu_memory_utilization=gpu_mem_util,
             max_model_len=max_model_len,
             trust_remote_code=trust_remote_code,
+            dtype=dtype,
+        )
+    elif model_name == "solar-10.7b":
+        repo_id = settings.solar_model_id
+        tensor_parallel = model_cfg.get("tensor_parallel_size", 1)
+        gpu_mem_util = model_cfg.get("gpu_memory_utilization", 0.9)
+        max_model_len = model_cfg.get("max_model_len", None)
+        trust_remote_code = model_cfg.get("trust_remote_code", True)
+        dtype = model_cfg.get("dtype", "bfloat16")
+        
+        return load_solar_llm(
+            model_id=repo_id,
+            tensor_parallel_size=tensor_parallel,
+            gpu_memory_utilization=gpu_mem_util,
+            max_model_len=max_model_len,
+            trust_remote_code=trust_remote_code,
+            dtype=dtype,
+        )
+    elif model_name == "eeve-10.8b":
+        repo_id = settings.eeve_model_id
+        tensor_parallel = model_cfg.get("tensor_parallel_size", 1)
+        gpu_mem_util = model_cfg.get("gpu_memory_utilization", 0.9)
+        max_model_len = model_cfg.get("max_model_len", None)
+        trust_remote_code = model_cfg.get("trust_remote_code", True)
+        dtype = model_cfg.get("dtype", "bfloat16")
+        
+        return load_eeve_llm(
+            model_id=repo_id,
+            tensor_parallel_size=tensor_parallel,
+            gpu_memory_utilization=gpu_mem_util,
+            max_model_len=max_model_len,
+            trust_remote_code=trust_remote_code,
+            dtype=dtype,
         )
     else:
         raise ValueError(f"Not supported model: {model_name}")

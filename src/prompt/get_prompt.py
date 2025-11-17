@@ -6,6 +6,8 @@ from typing import Callable, Dict, Iterable
 
 from src.schemas.rag import PromptBuildInput, PromptBuildOutput
 from src.prompt.gpt_oss_prompt import build_prompt as build_gpt_oss_prompt
+from src.prompt.solar_prompt import build_prompt as build_solar_prompt
+from src.prompt.eeve_prompt import build_prompt as build_eeve_prompt
 
 PromptBuilder = Callable[[PromptBuildInput], PromptBuildOutput]
 
@@ -16,7 +18,10 @@ def get_prompt(model_name: str | None, data: PromptBuildInput) -> PromptBuildOut
     """ 
     if model_name == "gpt-oss-20b":
         return build_gpt_oss_prompt(data)
-    
+    elif model_name == "solar-10.7b":
+        return build_solar_prompt(data)
+    elif model_name == "eeve-10.8b":
+        return build_eeve_prompt(data)
     else:
         raise ValueError(f"Not supported model for prompt building: {model_name}")
 

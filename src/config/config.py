@@ -19,8 +19,10 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO")
 
     # Model / inference
-    default_model_id: str = Field(default="PygmalionAI/pygmalion-6b")
+    default_model_id: str = Field(default="openai/gpt-oss-20b")
     gpt_oss_model_id: str = Field(default="openai/gpt-oss-20b")
+    solar_model_id: str = Field(default="upstage/SOLAR-10.7B-Instruct-v1.0")
+    eeve_model_id: str = Field(default="yanolja/YanoljaNEXT-EEVE-Instruct-10.8B")
     max_new_tokens: int = 256
     temperature: float = 0.8
     top_p: float = 0.9
