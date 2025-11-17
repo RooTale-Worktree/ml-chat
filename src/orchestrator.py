@@ -9,12 +9,11 @@ from src.schemas.request import ChatRequest
 from src.schemas.response import ChatResponse, ResponseContent, RetrievalItem, ModelInfo, Usage, Timing
 from src.schemas.rag import PromptBuildInput
 
+from src.llm.get_llm import get_llm
 from src.prompt.get_prompt import get_prompt
 from src.rag.chat_rag import retrieve_chat_context
 from src.rag.story_rag import retrieve_story_context
 from src.core.embedding import embed_text
-
-from src.llm.get_llm import get_llm
 from src.config.config import settings
 
 
