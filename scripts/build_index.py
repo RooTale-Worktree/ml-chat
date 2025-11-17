@@ -77,7 +77,7 @@ def main():
     build_scene_index(
         story_node_data=story_data,
         scene_node_list=scene_data_list, 
-        choice_relationship_list=choice_data_list
+        choice_relationship_list=choice_data_list,
         character_node_list=character_data_list
     )
     
