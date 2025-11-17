@@ -17,13 +17,13 @@ def _parse_story_node(story_node_data: Dict[str, Any]) -> Dict[str, Any]:
     RAG에 필요한 핵심 정보(제목, ID, 작가)를 추출.
     """
     story_info = {
-        "story_id": story_node_data.get("story_id"),
-        "title": story_node_data.get("title"),
+        "story_id": story_node_data.get("universe_id"),
+        "title": story_node_data.get("name"),
         "author": story_node_data.get("author")
     }
     
     if not story_info["title"]:
-        raise ValueError("입력된 Story 노드 데이터에 'title' 필드가 없습니다.")
+        raise ValueError("입력된 Universe 노드 데이터에 'name' 필드가 없습니다.")
     return story_info
 
 def _convert_scene_to_textnode(scene_data: Dict[str, Any], story_title: str) -> TextNode:

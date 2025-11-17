@@ -44,7 +44,7 @@ def run_cypher(query: str) -> List[Dict[str, Any]]:
 
 def main():
     
-    query_story = "MATCH (s:Story {story_id: 'main_story'}) RETURN s" 
+    query_story = "MATCH (s:Universe {universe_id: 1}) RETURN s" 
     story_data_list = run_cypher(query_story)
     if not story_data_list:
         print("오류: Story 노드를 찾을 수 없습니다. story_id를 확인하세요.")
