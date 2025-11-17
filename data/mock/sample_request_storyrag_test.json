@@ -1,0 +1,17 @@
+{
+    "message": "캐릭터 이름이 뭐야?",
+    "session_id": "rag-test-session-001",
+    
+    "story_title": "string",
+    
+    "persona": {
+        "character_id": "11111111-1111-1111-1111-111111111111",
+        "character_name": "테스트 가이드",
+        "persona": "나는 RAG 테스트를 돕는 AI입니다.",
+        "scenario": "RAG 테스트 중",
+        "speaking_style": "명확하게 말합니다.",
+        "constraints": [],
+        "example_dialogue": []
+    },
+    "chat_history": []
+}
