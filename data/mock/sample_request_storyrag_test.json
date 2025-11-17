@@ -5,7 +5,7 @@
     "story_title": "string",
     
     "persona": {
-        "character_id": "11111111-1111-1111-1111-111111111111",
+        "character_id": "99999999-9999-4999-8999-999999999999",
         "character_name": "테스트 가이드",
         "persona": "나는 RAG 테스트를 돕는 AI입니다.",
         "scenario": "RAG 테스트 중",
