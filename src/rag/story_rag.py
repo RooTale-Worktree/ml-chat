@@ -9,7 +9,7 @@ from src.schemas.request import StoryEvent
 
 from llama_index.core import StorageContext, load_index_from_storage, VectorStoreIndex
 from llama_index.core.schema import NodeWithScore
-from llama_index.embeddings.huggingface import HuggingFaceEmbeddings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 
 # --- 설정값 ---
@@ -19,7 +19,7 @@ STORY_INDEX_BASE_DIR = "data/story_indexes"
 
 # 2. build_scene_index.py와 동일한 임베딩 모델 설정 
 try:
-    Settings.embed_model = HuggingFaceEmbeddings(model_name="jhgan/ko-sbert-nli")
+    Settings.embed_model = HuggingFaceEmbedding(model_name="jhgan/ko-sbert-nli")
 except Exception as e:
     print(f"경고: HuggingFace 임베딩 모델 로드 실패. {e}")
 
