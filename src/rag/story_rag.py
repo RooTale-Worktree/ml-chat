@@ -47,7 +47,6 @@ def load_story_index(story_title: str) -> Optional[VectorStoreIndex]:
 # --- 메인 검색 함수 ---
 
 def retrieve_story_context(
-    story: List[StoryEvent], 
     story_title: str,        
     user_query: str
 ) -> StoryRAGResult:

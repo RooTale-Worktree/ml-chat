@@ -56,10 +56,11 @@ def handle_chat(payload: Dict) -> Dict:
 
     # Prompt element3: Story RAG context
     story_context = []
-    if story_events:
+    
+    if req.story_title:
         t_story_retr_start = time.time()
         story_rag = retrieve_story_context(
-            story=story_events,
+            story_title=req.story_title,  
             user_query=req.message
         )
         story_retr_ms = int((time.time() - t_story_retr_start) * 1000)
