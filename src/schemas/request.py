@@ -96,6 +96,7 @@ class ChatRequest(BaseModel):
     chat_history: Optional[List[Message]] = Field(default=None)
     chat_rag_config: ChatRAGConfig = Field(default_factory=ChatRAGConfig)
     story: Optional[List[StoryEvent]] = Field(default=None)
+    story_title: str
     model: ModelConfig = Field(default_factory=ModelConfig)
     gen: GenConfig = Field(default_factory=GenConfig)
     meta: Dict[str, Any] = Field(default_factory=dict)

@@ -1,59 +1,82 @@
-"""
-Story retrieval stub.
-Loads mock story JSON and slices first K paragraphs.
-Replace later with vector similarity search.
-"""
 from __future__ import annotations
+from typing import List, Optional
 from pathlib import Path
-import json
-from typing import List
+from functools import lru_cache 
 
-from src.schemas.request import StoryEvent
 from src.schemas.rag import RAGChunk, StoryRAGResult
-from src.config.config import settings
+from src.schemas.request import StoryEvent 
 
-from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
 
-def retrieve_story_context(story: List[StoryEvent], user_query: str) -> StoryRAGResult:
+from llama_index.core import StorageContext, load_index_from_storage, VectorStoreIndex
+from llama_index.core.schema import NodeWithScore
+from llama_index.embeddings.huggingface import HuggingFaceEmbeddings
+from llama_index.core import Settings
+
+# --- 설정값 ---
+
+# 1. '스토리 인덱스' (Story RAG)가 저장된 기본 폴더
+STORY_INDEX_BASE_DIR = "data/story_indexes"
+
+# 2. build_scene_index.py와 동일한 임베딩 모델 설정 
+try:
+    Settings.embed_model = HuggingFaceEmbeddings(model_name="jhgan/ko-sbert-nli")
+except Exception as e:
+    print(f"경고: HuggingFace 임베딩 모델 로드 실패. {e}")
+
+# --- 인덱스 로더 함수 ---
+
+@lru_cache(maxsize=10) # <-- 최근 사용한 10개의 스토리 인덱스를 메모리에 캐싱
+def load_story_index(story_title: str) -> Optional[VectorStoreIndex]:
+    """
+    'story_title'을 기반으로 사전 구축된 '스토리 인덱스'를 로드합니다.
+    """
+    try:
+        index_dir = Path(STORY_INDEX_BASE_DIR) / story_title
+        if not index_dir.exists():
+            print(f"경고: Story 인덱스를 찾을 수 없습니다. (경로: {index_dir})")
+            return None
+            
+        storage_context = StorageContext.from_defaults(persist_dir=str(index_dir))
+        index = load_index_from_storage(storage_context)
+        print(f"Story 인덱스 로드 성공: {story_title}")
+        return index
+    except Exception as e:
+        print(f"Story 인덱스 '{story_title}' 로드 중 오류 발생: {e}")
+        return None
+
+# --- 메인 검색 함수 ---
+
+def retrieve_story_context(
+    story_title: str,        
+    user_query: str
+) -> StoryRAGResult:
     
-    docs: List[Document] = []
-    for ev in story:
-        ev_meta = ev.meta or {}
-        for key, value in ev_meta.items():
-            if isinstance(value, str):
-                continue
-            elif isinstance(value, list):
-                ev_meta[key] = ", ".join(str(v) for v in value)
-            else:
-                raise ValueError(f"Unsupported metadata type for key '{key}': {type(value)}")
-
-        docs.append(Document(
-            page_content=ev.content,
-            metadata={
-                "story_id": str(ev.story_id),
-                "chunk_no": ev.chunk_no,
-                "chunk_type": ev.chunk_type,
-                "timestamp": ev.timestamp.isoformat() if ev.timestamp else None,
-                **ev_meta
-            }
-        ))
     
-    embeddings = HuggingFaceEmbeddings(model_name="jhgan/ko-sbert-nli")
-    vectorstore = Chroma.from_documents(documents=docs, embedding=embeddings)
-    retriever = vectorstore.as_retriever()
-    retrieved_documents = retriever.invoke(user_query)
+    
 
+    all_nodes: List[NodeWithScore] = []
+
+    # 1.검색
+    story_index = load_story_index(story_title)
+    
+    if story_index:
+        retriever = story_index.as_retriever()
+        retrieved_nodes = retriever.retrieve(user_query)
+        all_nodes.extend(retrieved_nodes)
+    else:
+        print(f"'{story_title}' 인덱스가 로드되지 않아 RAG 검색을 건너뜁니다.")
+
+    # 2.결과 변환 (Node -> RAGChunk)
     chunks: List[RAGChunk] = []
-    for i, doc in enumerate(retrieved_documents):
+    for i, node_with_score in enumerate(all_nodes):
+        node = node_with_score.node
         chunks.append(RAGChunk(
-            id=f"story-{i}", 
-            source=doc.metadata.get("source", "story_document"),
-            text=doc.page_content, 
-            score=None 
+            id=node.id_ or f"retrieved-{i}",
+            source=node.metadata.get("source_document", "unknown_source"),
+            text=node.get_content(),
+            score=node_with_score.score 
         ))
+    
     return StoryRAGResult(context=chunks)
 
 __all__ = ["retrieve_story_context"]

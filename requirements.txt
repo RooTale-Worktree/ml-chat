@@ -13,7 +13,6 @@ langchain-huggingface>=0.0.3
 langchain-core>=0.3.79
 langchain-text-splitters>=0.3.11
 chromadb==1.1.1
-jq==1.10.0
 llama-index
 llama-index-embeddings-huggingface
 datasets>=2.18.0
@@ -38,3 +37,6 @@ chromadb==1.1.1
 jq==1.10.0
 llama-index
 llama-index-embeddings-huggingface
+neo4j
+python-dotenv
+
