@@ -16,3 +16,25 @@ chromadb==1.1.1
 jq==1.10.0
 llama-index
 llama-index-embeddings-huggingface
+datasets>=2.18.0
+peft>=0.11.0
+trl>=0.9.6
+bitsandbytes>=0.43.0; platform_system != "Darwin"
+sentencepiece>=0.1.99
+safetensors>=0.4.3
+einops>=0.7.0
+pydantic>=2.6.0
+pydantic-settings>=2.0
+runpod>=1.6.2
+pytest>=8.2.0
+sentence-transformers>=2.2.2
+hf_transfer>=0.1.6
+langchain>=0.3.27
+langchain-community>=0.3.31
+langchain-huggingface>=0.0.3
+langchain-core>=0.3.79
+langchain-text-splitters>=0.3.11
+chromadb==1.1.1
+jq==1.10.0
+llama-index
+llama-index-embeddings-huggingface

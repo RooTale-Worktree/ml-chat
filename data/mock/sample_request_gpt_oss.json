@@ -1,0 +1,23 @@
+{
+  "session_id": "sess_demo_gpt_oss",
+  "user_id": "user_demo",
+  "model": {
+    "name": "gpt-oss-20b",
+    "context_length": 8192,
+    "device": "auto",
+    "dtype": null
+  },
+  "gen": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_new_tokens": 512,
+    "repetition_penalty": 1.05,
+    "stop": [
+      "\nUser:",
+      "\n사용자:"
+    ]
+  },
+  "meta": {
+    "request_origin": "sample_gpt_oss"
+  }
+}

@@ -148,3 +148,51 @@
 - LLM 모델 선정
 - 채팅 context를 유지하기 위해 어떤 정보들을 RAG에 활용할 수 있을지
 - 단순 채팅이 아니라 스토리 진행도 함께: Pygmalion의 `narrator` role을 활용할 수 있을지
+
+## Fine-tune Qwen on Korean Roleplay Dataset
+
+이 저장소에는 Qwen 모델을 한국어 롤플레이 데이터셋으로 SFT(지도학습) 미세조정하는 스크립트가 포함되어 있습니다.
+
+- 데이터셋: `junidude14/korean_roleplay_dataset_for_chat_game_2` (fields: `instruction`, `input`, `output`)
+- 스크립트: `src/fine_tune/qwen_7b_tune.py`
+- 방식: TRL `SFTTrainer` + PEFT(LoRA/QLoRA), Qwen chat template 사용
+
+사전 준비:
+
+1) GPU 환경 권장 (CUDA). macOS에서는 학습 대신 전처리/검증만 수행 가능.
+2) 의존성 설치 (필요 시 가상환경 사용 권장)
+
+```bash
+pip install -r requirements.txt
+```
+
+빠른 실행 예시 (GPU):
+
+```bash
+python -m src.fine_tune.qwen_7b_tune \
+    --model_name Qwen/Qwen2.5-7B-Instruct \
+    --output_dir ./outputs/qwen2.5-7b-roleplay-sft \
+    --max_seq_length 2048 \
+    --per_device_train_batch_size 1 \
+    --gradient_accumulation_steps 16 \
+    --num_train_epochs 2 \
+    --lr 2e-4 \
+    --use_qlora \
+    --gradient_checkpointing
+```
+
+옵션 설명:
+
+- `--use_qlora`: 4-bit QLoRA(메모리 절감) 사용. CUDA + bitsandbytes 필요
+- `--use_lora`: 정밀도 기반 LoRA (정수 양자화 사용 안 함)
+- `--packing`: 시퀀스 내 여러 샘플 패킹 (긴 컨텍스트에서 효율 ↑)
+- `--push_to_hub`, `--hub_model_id`: Hugging Face Hub로 push 가능
+
+데이터 전처리 정책:
+
+- `instruction`는 system 역할로, `input`의 `USR:/NPC:` 턴은 user/assistant로 매핑, `output`은 최종 assistant 턴으로 붙입니다.
+- 최종 텍스트는 Qwen 토크나이저의 `apply_chat_template`로 생성됩니다.
+
+메모리 팁:
+
+- 7B 기준 QLoRA로 24GB VRAM에서 학습 가능(설정에 따라 상이). `--gradient_accumulation_steps`와 `--per_device_train_batch_size`를 조정하십시오.

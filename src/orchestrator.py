@@ -9,26 +9,13 @@ from src.schemas.request import ChatRequest
 from src.schemas.response import ChatResponse, ResponseContent, RetrievalItem, ModelInfo, Usage, Timing
 from src.schemas.rag import PromptBuildInput
 
-from src.core.prompt_builder import build_prompt
+from src.prompt.get_prompt import get_prompt
 from src.rag.chat_rag import retrieve_chat_context
 from src.rag.story_rag import retrieve_story_context
 from src.core.embedding import embed_text
 
-from src.llm.pygmalion_llm import PygmalionLLM
-from src.llm.mock_llm import MockLLM
+from src.llm.get_llm import get_llm
 from src.config.config import settings
-
-_llm_singleton = None
-
-def _get_llm():
-    """
-    Lazy-load singleton Pygmalion model.
-    In the future we could branch based on settings.env or a flag to use mock.
-    """
-    global _llm_singleton
-    if _llm_singleton is None:
-        _llm_singleton = PygmalionLLM(settings.default_model_id)
-    return _llm_singleton
 
 
 def handle_chat(payload: Dict) -> Dict:
@@ -50,45 +37,53 @@ def handle_chat(payload: Dict) -> Dict:
     # Prompt element1: Persona
     persona = req.persona
 
+    chat_history = req.chat_history or []
+    story_events = req.story or []
+
     # Prompt element2: Chatting RAG context
-    t_chat_retr_start = time.time()
-    chat_rag = retrieve_chat_context(
-        chat_history=req.chat_history,
-        chat_rag_config=req.chat_rag_config,
-        query_embedding=query_embedding,
-    )
-    chat_retr_ms = int((time.time() - t_chat_retr_start) * 1000)
+    chat_context = []
+    if chat_history:
+        t_chat_retr_start = time.time()
+        chat_rag = retrieve_chat_context(
+            chat_history=chat_history,
+            chat_rag_config=req.chat_rag_config,
+            query_embedding=query_embedding,
+        )
+        chat_retr_ms = int((time.time() - t_chat_retr_start) * 1000)
+        chat_context = chat_rag.context
+    else:
+        chat_retr_ms = 0
 
     # Prompt element3: Story RAG context
-    t_story_retr_start = time.time()
-    story_rag = retrieve_story_context(
-        story=req.story,
-        user_query=req.message
-    )
-    story_retr_ms = int((time.time() - t_story_retr_start) * 1000)
+    story_context = []
+    if story_events:
+        t_story_retr_start = time.time()
+        story_rag = retrieve_story_context(
+            story=story_events,
+            user_query=req.message
+        )
+        story_retr_ms = int((time.time() - t_story_retr_start) * 1000)
+        story_context = story_rag.context
+    else:
+        story_retr_ms = 0
 
     # Prompt element4: Recent chat history
-    norm_history = [h.to_dialogue_turn() for h in req.chat_history]
+    norm_history = [h.to_dialogue_turn() for h in chat_history]
 
     # Build prompt
     prompt_input = PromptBuildInput(
         persona=persona,
-        chat_context=chat_rag.context,
-        story_context=story_rag.context,
+        chat_context=chat_context,
+        story_context=story_context,
         recent_chat=norm_history,
         user_message=req.message
     )
-    prompt_out = build_prompt(prompt_input)
+    model_name = req.model.name if req.model else None
+    prompt_out = get_prompt(model_name, prompt_input)
 
     # LLM generate
     t_llm_load_start = time.time()
-    model_name = req.model.name if req.model else None
-    if model_name == "mock_llm":
-        llm = MockLLM()
-    elif model_name == "pygmalion-6b":
-        llm = _get_llm()
-    else:
-        raise ValueError(f"Not supported model: {model_name}")
+    llm = get_llm(model_name, req.model)
     llm_load_ms = int((time.time() - t_llm_load_start) * 1000)
 
     # Generate response
@@ -114,7 +109,7 @@ def handle_chat(payload: Dict) -> Dict:
 
     # Map retrievals to response schema
     retrieved: list[RetrievalItem] = []
-    for idx, ch in enumerate(chat_rag.context):
+    for idx, ch in enumerate(chat_context):
         retrieved.append(RetrievalItem(
             source="chat_history",
             id=ch.id,
@@ -125,7 +120,7 @@ def handle_chat(payload: Dict) -> Dict:
             meta={"label": "CHAT"}
         ))
     base_rank = len(retrieved)
-    for jdx, ch in enumerate(story_rag.context):
+    for jdx, ch in enumerate(story_context):
         retrieved.append(RetrievalItem(
             source="story",
             id=ch.id,
@@ -143,14 +138,16 @@ def handle_chat(payload: Dict) -> Dict:
         total_tokens=usage_dict.get("prompt_tokens", 0) + usage_dict.get("completion_tokens", 0)
     )
 
+    model_repo_name = getattr(llm, "model_id", model_name or settings.default_model_id)
     model_info = ModelInfo(
         provider="local",
-        name=settings.default_model_id,
+        name=model_repo_name,
         context_length=req.model.context_length,
         dtype=req.model.dtype,
         embedding_model="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     )
 
+    # Calculate total timing and assemble timing informations
     total_ms = int((time.time() - start_time) * 1000)
     timing = Timing(
         total_ms=total_ms,
@@ -164,6 +161,7 @@ def handle_chat(payload: Dict) -> Dict:
         generate_ms=generate_ms,
     )
 
+    # Assemble final response
     resp = ChatResponse(
         session_id=req.session_id or "",
         responded_as="character",
