@@ -54,7 +54,7 @@ def main():
     story_data = dict(story_node)
 
     query_scenes = "MATCH (n:Scene) RETURN n"
-    scene_data_list = run_cypher(query_scenes)
+    scene_records = run_cypher(query_scenes)
     scene_data_list = [dict(record['n']) for record in scene_records]
     print(f"Scene 노드 {len(scene_data_list)}개 추출 완료.")
 
