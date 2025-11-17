@@ -71,10 +71,41 @@ def _convert_choice_to_textnode(choice_data: Dict[str, Any], story_title: str) -
         metadata=metadata
     )
 
+def _convert_character_to_textnode(char_data: Dict[str, Any], story_title: str) -> TextNode:
+    """
+    백엔드의 (Character) 노드 1개를 LlamaIndex의 TextNode 1개로 변환.
+    """
+    name = char_data.get("name", "")
+    description = char_data.get("description", "")
+    personality = ", ".join(char_data.get("personality", []))
+
+    main_text = f"캐릭터 이름: {name}\n설명: {description}\n성격: {personality}"
+
+    metadata = {
+        "source_document": story_title,
+        "chunk_type": "character_node", 
+        "character_name": name
+    }
+    
+    for key, value in char_data.items():
+        if key in ["name", "description", "personality", "character_id"]:
+            continue
+        if isinstance(value, (dict, list)):
+            metadata[key] = json.dumps(value)
+        else:
+            metadata[key] = value
+
+    return TextNode(
+        text=main_text, 
+        id_=char_data.get("character_id"), 
+        metadata=metadata
+    )
+
 def build_scene_index(
     story_node_data: Dict[str, Any],
     scene_node_list: List[Dict[str, Any]], 
-    choice_relationship_list: List[Dict[str, Any]]
+    choice_relationship_list: List[Dict[str, Any]],
+    character_node_list: List[Dict[str, Any]]
 ):
    
     
@@ -95,7 +126,13 @@ def build_scene_index(
     ]
     print(f"총 {len(choice_nodes)}개의 Choice 노드를 변환했습니다.")
 
-    all_nodes = scene_nodes + choice_nodes
+    character_nodes = [
+        _convert_character_to_textnode(char, story_title)
+        for char in character_node_list
+    ]
+    print(f"총 {len(character_nodes)}개의 Character 노드를 변환했습니다.")
+
+    all_nodes = scene_nodes + choice_nodes + character_nodes
     if not all_nodes:
         print("경고: 변환할 노드가 없습니다. 인덱스를 생성하지 않습니다.")
         return

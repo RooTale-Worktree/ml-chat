@@ -68,11 +68,17 @@ def main():
     choice_data_list = run_cypher(query_choices)
     print(f"Choice 관계 {len(choice_data_list)}개 추출 완료.")
 
+    query_characters = "MATCH (n:Character) RETURN n"
+    character_records = run_cypher(query_characters)
+    character_data_list = [dict(record['n']) for record in character_records]
+    print(f"Character 노드 {len(character_data_list)}개 추출 완료.")
+
    
     build_scene_index(
         story_node_data=story_data,
         scene_node_list=scene_data_list, 
         choice_relationship_list=choice_data_list
+        character_node_list=character_data_list
     )
     
     print("--- scene RAG 인덱스 구축 완료 ---")
