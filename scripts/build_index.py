@@ -23,39 +23,56 @@ if __name__ == "__main__":
 """
 import json
 from pathlib import Path
-
+from typing import Any, List, Dict 
+from neo4j import GraphDatabase
 from src.core.build_scene_index import build_scene_index 
 
-# TODO: 이 부분은 나중에 백엔드 DB에서 직접 데이터를 가져오는 함수로 대체해야 함.
-MOCK_STORY_NODE_FILE="data/mock/sample_story_node.json" #Dict 형식
-MOCK_SCENE_LIST_FILE="data/mock/sample_story_node.json" #List[Dict] 형식
-MOCK_CHOICE_LIST_FILE ="data/mock/sample_story_node.json"#List[Dict] 형식
+URI = "neo4j+ssc://32adcd36.databases.neo4j.io"
+AUTH = ("neo4j", "sKyJKxvWChIunry20Sk2cA-Wi-d-0oZH75LWcZz6zUg")
 
+def get_driver():
+    return GraphDatabase.driver(URI, auth=AUTH)
 
-def _load_json_data(path: str) -> Any:
-    p = Path(path)
-    if not p.exists():
-        raise FileNotFoundError(f"데이터 파일 {p}를 찾을 수 없습니다.")
-    with p.open("r", encoding="utf-8") as f:
-        return json.load(f)
+def run_cypher(query: str) -> List[Dict[str, Any]]:
+    records = []
+    with get_driver() as driver:
+        with driver.session() as session:
+            result = session.run(query)
+            for record in result:
+                records.append(record.data()) 
+    return records
 
 def main():
     
-    try:
-        story_data = _load_json_data(MOCK_STORY_NODE_FILE)
-        scene_data = _load_json_data(MOCK_SCENE_LIST_FILE)
-        choice_data = _load_json_data(MOCK_CHOICE_LIST_FILE)
-    except FileNotFoundError as e:
-        print(f"오류: {e}")
-        print("인덱스 구축에 실패했습니다.")
+    query_story = "MATCH (s:Story {story_id: 'main_story'}) RETURN s" 
+    story_data_list = run_cypher(query_story)
+    if not story_data_list:
+        print("오류: Story 노드를 찾을 수 없습니다. story_id를 확인하세요.")
         return
-    print("데이터 로드 완료.")
+    
+    story_node = story_data_list[0]['s']
+    story_data = dict(story_node)
+
+    query_scenes = "MATCH (n:Scene) RETURN n"
+    scene_data_list = run_cypher(query_scenes)
+    scene_data_list = [dict(record['n']) for record in scene_records]
+    print(f"Scene 노드 {len(scene_data_list)}개 추출 완료.")
+
+    
+    query_choices = """
+    MATCH (sc1:Scene)-[r:CHOICE]->(sc2:Scene) 
+    RETURN sc1.node_id AS parent_node_id, 
+           r.choice_text AS choice_text, 
+           sc2.node_id AS next_node_id
+    """
+    choice_data_list = run_cypher(query_choices)
+    print(f"Choice 관계 {len(choice_data_list)}개 추출 완료.")
 
    
     build_scene_index(
         story_node_data=story_data,
-        scene_node_list=scene_data,
-        choice_relationship_list=choice_data
+        scene_node_list=scene_data_list, 
+        choice_relationship_list=choice_data_list
     )
     
     print("--- scene RAG 인덱스 구축 완료 ---")
