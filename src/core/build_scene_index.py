@@ -1,7 +1,7 @@
 import json
 from llama_index.core.schema import TextNode
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
-from llama_index.embeddings.huggingface import HuggingFaceEmbeddings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -100,7 +100,7 @@ def build_scene_index(
         print("경고: 변환할 노드가 없습니다. 인덱스를 생성하지 않습니다.")
         return
 
-    Settings.embed_model = HuggingFaceEmbeddings(model_name=EMBED_MODEL_NAME)
+    Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL_NAME)
 
     print("임베딩 및 인덱싱 시작...")
     index = VectorStoreIndex(all_nodes, show_progress=True)
