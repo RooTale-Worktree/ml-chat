@@ -12,7 +12,6 @@ from llama_index.core.schema import NodeWithScore
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 
-# --- 설정값 ---
 
 # 1. '스토리 인덱스' (Story RAG)가 저장된 기본 폴더
 STORY_INDEX_BASE_DIR = "data/story_indexes"
