@@ -11,10 +11,12 @@ Role = Literal["user", "assistant", "system", "character", "narrator"]
 chunk_type = Literal["summary", "character_profile", "character_list",
                      "location_info", "character_trait"]
 
+
 # persona에서 예시 대화를 관리하기 위한 table
 class DialogueTurn(BaseModel):
     role: Role
     content: str
+
 
 # 캐릭터의 persona를 관리
 class Persona(BaseModel):
@@ -26,6 +28,7 @@ class Persona(BaseModel):
     constraints: List[str] = Field(default_factory=list)
     example_dialogue: List[DialogueTurn] = Field(default_factory=list)
     meta: Dict[str, Any] = Field(default_factory=dict)
+
 
 # 사용자 질문, 시스템 답변, 프롬프트를 통합적으로 관리
 class Message(BaseModel):
@@ -50,13 +53,14 @@ class Message(BaseModel):
             content=self.content,
         )
 
+
 # 채팅 기반 RAG를 위한 config
 class ChatRAGConfig(BaseModel):
     top_k_history: int = 6
     history_time_window_min: Optional[int] = None
     measure: str = "cosine"
     threshold: float = 0.12
-    allow_compute_missing: bool = False     # embedding이 비어있는 table이 있는 경우 계산
+
 
 # 스토리 RAG를 위해 스토리 정보를 입력으로 받음
 class StoryEvent(BaseModel):
@@ -72,12 +76,6 @@ class StoryEvent(BaseModel):
     embedding_model: Optional[str] = None
     embedding_etag: Optional[str] = None
 
-# 응답에 사용할 모델과 관련된 엔진/리소스를 설정
-class ModelConfig(BaseModel):
-    name: str = "pygmalion-6b"
-    context_length: int = 4096
-    device: str = "auto"         # "cpu", "cuda", "mps", "auto"
-    dtype: Optional[str] = None  # "fp16", "fp32", "bf16" 등
 
 # LLM 생성 샘플링 관련 하이퍼파라미터
 class GenConfig(BaseModel):
@@ -86,6 +84,7 @@ class GenConfig(BaseModel):
     max_new_tokens: int = 256
     repetition_penalty: Optional[float] = 1.05 
     stop: List[str] = Field(default_factory=list)
+
 
 # handler가 처리해야하는 request의 형식
 class ChatRequest(BaseModel):
@@ -97,6 +96,6 @@ class ChatRequest(BaseModel):
     chat_rag_config: ChatRAGConfig = Field(default_factory=ChatRAGConfig)
     story: Optional[List[StoryEvent]] = Field(default=None)
     story_title: str
-    model: ModelConfig = Field(default_factory=ModelConfig)
+    model: Dict[str, Any] = Field(default_factory=dict)
     gen: GenConfig = Field(default_factory=GenConfig)
     meta: Dict[str, Any] = Field(default_factory=dict)
