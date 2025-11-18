@@ -22,6 +22,7 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
         tensor_parallel = model_cfg.get("tensor_parallel_size", 1)
         gpu_mem_util = model_cfg.get("gpu_memory_utilization", 0.9)
         max_model_len = model_cfg.get("max_model_len", 131_072)
+        max_num_seqs = model_cfg.get("max_num_seqs", 16)
         trust_remote_code = model_cfg.get("trust_remote_code", True)
         dtype = model_cfg.get("dtype", "auto")
         
@@ -30,6 +31,7 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
             tensor_parallel_size=tensor_parallel,
             gpu_memory_utilization=gpu_mem_util,
             max_model_len=max_model_len,
+            max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
         )
@@ -38,6 +40,7 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
         tensor_parallel = model_cfg.get("tensor_parallel_size", 1)
         gpu_mem_util = model_cfg.get("gpu_memory_utilization", 0.9)
         max_model_len = model_cfg.get("max_model_len", None)
+        max_num_seqs = model_cfg.get("max_num_seqs", 16)
         trust_remote_code = model_cfg.get("trust_remote_code", True)
         dtype = model_cfg.get("dtype", "bfloat16")
         
@@ -46,6 +49,7 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
             tensor_parallel_size=tensor_parallel,
             gpu_memory_utilization=gpu_mem_util,
             max_model_len=max_model_len,
+            max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
         )

@@ -62,21 +62,6 @@ class ChatRAGConfig(BaseModel):
     threshold: float = 0.12
 
 
-# 스토리 RAG를 위해 스토리 정보를 입력으로 받음
-class StoryEvent(BaseModel):
-    story_id: UUID4
-    chunk_no: int
-    chunk_type: chunk_type
-    content: str
-    timestamp: Optional[datetime] = None
-    meta: Dict[str, Any] = Field(default_factory=dict)
-    # optional: embedding을 보내는 경우
-    embedding: Optional[List[float]] = None
-    embedding_dim: Optional[int] = None
-    embedding_model: Optional[str] = None
-    embedding_etag: Optional[str] = None
-
-
 # LLM 생성 샘플링 관련 하이퍼파라미터
 class GenConfig(BaseModel):
     temperature: float = 0.8
@@ -93,9 +78,8 @@ class ChatRequest(BaseModel):
     user_id: Optional[str] = None
     persona: Persona
     chat_history: Optional[List[Message]] = Field(default=None)
-    chat_rag_config: ChatRAGConfig = Field(default_factory=ChatRAGConfig)
-    story: Optional[List[StoryEvent]] = Field(default=None)
-    story_title: str
+    chat_rag_config: Optional[ChatRAGConfig] = Field(default_factory=ChatRAGConfig)
+    story_title: Optional[str] = None
     model: Dict[str, Any] = Field(default_factory=dict)
     gen: GenConfig = Field(default_factory=GenConfig)
     meta: Dict[str, Any] = Field(default_factory=dict)

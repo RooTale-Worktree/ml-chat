@@ -15,7 +15,7 @@ class Usage(BaseModel):
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
-
+    finish_reason: Optional[FinishReason] = None
 
 # LLM 응답을 관리: 자연어와 embedding 결과 2개를 반환
 class ResponseContent(BaseModel):
@@ -23,7 +23,6 @@ class ResponseContent(BaseModel):
     embedding: Optional[List[float]] = None # 텍스트 embedding
     character_id: Optional[UUID4] = None    # role이 "character"일 때 연결된 캐릭터
     character_name: Optional[str] = None
-    finish_reason: Optional[FinishReason] = None
 
 # 실행 모델 메타 데이터
 class ModelInfo(BaseModel):

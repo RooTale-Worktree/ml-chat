@@ -50,9 +50,6 @@ def retrieve_story_context(
     user_query: str
 ) -> StoryRAGResult:
     
-    
-    
-
     all_nodes: List[NodeWithScore] = []
 
     # 1.검색

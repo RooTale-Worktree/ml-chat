@@ -1,6 +1,14 @@
 ## 개요
 
-스토리 기반 context와 최근 대화 맥락을 결합하고, Persona 정보를 포함한 프롬프트를 구성하여 캐릭터 특화 LLM에게 질의하는 구조의 Chat 서비스 스캐폴딩입니다.
+캐릭터 persona, 스토리 맥락, 대화 기록을 결합하여 일관된 캐릭터 응답을 생성하는 LLM 기반 채팅 서비스입니다.
+RAG(Retrieval-Augmented Generation)를 활용해 관련 컨텍스트를 검색하고, vLLM으로 최적화된 추론을 제공합니다.
+
+**주요 기능:**
+- 캐릭터별 persona 기반 roleplay 대화
+- 대화 기록 및 스토리 컨텍스트 RAG
+- 다중 LLM 모델 지원 (GPT-OSS, Solar, EEVE)
+- RunPod Serverless 배포 지원
+- vLLM 기반 고성능 추론
 
 ## 디렉토리 구조
 
@@ -9,13 +17,13 @@
 ├── data
 │   ├── indexes
 │   └── mock
-│       ├── sample_history.json
+│       ├── sample_chat_history.json
+│       ├── sample_persona_luffy.json
 │       ├── sample_persona.json
-│       ├── sample_request.json
-│       ├── sample_story.json
-│       └── vector
-│           ├── sha1:0c26aa7b21f177658276a420c390090638af6a1e.npy
-│           └── sha1:6a5009a8cd7490c2121130087542b613a7cf3a7d.npy
+│       ├── sample_request_gpt_oss.json
+│       ├── sample_request_solar.json
+│       ├── sample_request_storyrag_test.json
+│       └── sample_story.json
 ├── Dockerfile
 ├── handler.py
 ├── README.md
@@ -27,172 +35,253 @@
 │   ├── config
 │   │   └── config.py
 │   ├── core
-│   │   ├── embedding.py
-│   │   └── prompt_builder.py
+│   │   ├── build_scene_index.py
+│   │   └── embedding.py
+│   ├── fine_tune
+│   │   └── gpt_20b_tune.py
 │   ├── llm
-│   │   ├── mock_llm.py
-│   │   └── pygmalion_llm.py
+│   │   ├── eeve_llm.py
+│   │   ├── get_llm.py
+│   │   ├── gpt_oss_llm.py
+│   │   └── solar_llm.py
 │   ├── orchestrator.py
+│   ├── prompt
+│   │   ├── eeve_prompt.py
+│   │   ├── get_prompt.py
+│   │   ├── gpt_oss_prompt.py
+│   │   └── solar_prompt.py
 │   ├── rag
 │   │   ├── chat_rag.py
 │   │   └── story_rag.py
-│   ├── schemas
-│   │   ├── embedding.py
-│   │   ├── rag.py
-│   │   ├── request.py
-│   │   └── response.py
-│   └── utils
+│   └── schemas
+│       ├── rag.py
+│       ├── request.py
+│       └── response.py
 └── tests
     └── test_prompt_builder.py
 ```
 
 ## 스크립트 기능
 
-1. `handler.py`
-    - Runpod Stateless의 entrypoint입니다.
-    - 내부에 있는 `handler(event)` 함수를 호출하면 `event[’input’]`을 파싱하여 `src/orchestrator.py`의 `handle_chat(payload)` 함수를 호출합니다.
-    - root 디렉토리에서 shell에 아래 명령어를 입력하여 로컬 테스트를 진행할 수 있습니다.
-        
-        ```bash
-        python -m handler
-        ```
-        
-    - 로컬 테스트 시에 CLI 옵션을 통해 어떤 mock-up data를 불러올지 지정할 수 있습니다. 자세한 옵션은 `handler.py`의 `argparser`를 통해 확인할 수 있습니다.
-        
-        ```bash
-        python -m handler --persona ./data/mock/sample_persona.json
-        ```
-        
-2. `src/orchestrator.py`
-    - 한 턴의 대화에 대해 ‘사용자 질의’ → ‘LLM 응답’의 전체 과정을 관리하기 위한 스크립트입니다.
-    - 다음의 workflow로 한 턴의 대화를 처리합니다.
-        1. `src/core/embedding.py`의 `embed_text(text)`를 호출하여 사용자의 질의문을 벡터로 임베딩합니다. (RAG에서 cosine 유사도를 계산하기 위함)
-        2. `src/rag/chat_rag.py`의 `retrieve_chat_context()`함수를 호출하여 지난 채팅 맥락 기반 RAG를 호출합니다.
-        3. `src/rag/story_rag.py`의 `retrieve_story_context()`함수를 호출하여 스토리 기반 RAG를 호출합니다.
-        4. `src/core/prompt_builder.py`의 `build_prompt()`함수를 호출합니다. persona, chat RAG, story RAG, 사용자 질의를 기반으로 프롬프트를 생성합니다.
-        5. LLM 모델을 로드한 후 답변을 생성합니다.
-        6. Response 타입에 맞게 파싱한 후, 결과를 반환합니다.
-3. `src/schemas/request.py`
-    - ‘사용자 질의’의 형식을 관리하기 위한 pydantic model을 정의합니다. (백엔드 → serverless 호출에서의 interface)
-    - 채팅 히스토리, RAG 조건, 스토리, 사용 모델 등의 정보를 관리합니다.
-        
-        ```python
-        # handler가 처리해야하는 request의 형식
-        class ChatRequest(BaseModel):
-            message: str
-            session_id: Optional[str] = None
-            user_id: Optional[str] = None
-            persona: Persona
-            history: List[Message] = Field(default_factory=list)
-            chat_rag_config: ChatRAGConfig = Field(default_factory=ChatRAGConfig)
-            story: List[StoryEvent] = Field(default_factory=list)
-            model: ModelConfig = Field(default_factory=ModelConfig)
-            gen: GenConfig = Field(default_factory=GenConfig)
-            meta: Dict[str, Any] = Field(default_factory=dict)
-        ```
-        
-4. `src/schemas/response.py`
-    - ‘LLM 응답’의 형식을 관리하기 위한 pydantic model을 정의합니다. (serverless → 백엔드 응답에서의 interface)
-    - LLM 응답, RAG 점수, 사용 프롬프트 등의 정보를 관리합니다.
-        
-        ```python
-        # handler가 반환해야하는 response 형식
-        class ChatResponse(BaseModel):
-            session_id: str
-            responded_as: Literal["narrator", "character"] = "character"
-            response_contents: List[ResponseContent]
-            usage: Optional[Usage] = None
-            retrieved: List[RetrievalItem] = Field(default_factory=list)
-        
-            # 실행/디버깅 메타
-            model_info: Optional[ModelInfo] = None
-            timing: Optional[Timing] = None
-            error: Optional[str] = None
-            meta: Dict[str, Any] = Field(default_factory=dict)
-        ```
-        
-5. `src/schemas/rag.py`
-    - Serverless 내부에서 RAG 및 prompt의 input과 output을 관리하기 위한 pydantic model을 정의합니다.
-    - 아직 RAG 부분의 구현이 완벽하지 않으므로 수정될 수 있습니다.
-        
-        ```python
-        class RAGChunk(BaseModel):
-            id: str
-            source: str
-            text: str
-            score: Optional[float] = None
-            meta: Dict[str, Any] = {}
-        
-        class ChatRAGResult(BaseModel):
-            context: List[RAGChunk]
-        
-        class StoryRAGResult(BaseModel):
-            context: List[RAGChunk]
-        
-        class PromptBuildInput(BaseModel):
-            persona: Persona
-            chat_context: List[RAGChunk]
-            story_context: List[RAGChunk]
-            history: List[DialogueTurn]
-            user_message: str
-        
-        class PromptBuildOutput(BaseModel):
-            prompt: str
-            meta: Dict[str, Any] = {}
-        ```
-        
+### 1. `handler.py`
+RunPod Serverless의 entrypoint입니다.
+- `handler(event)` 함수가 요청을 받아 `orchestrator.py`의 `handle_chat()`을 호출
+- 로컬 테스트 지원: `python -m handler`
 
-## TODO
-
-- `src/rag/chat_rag.py`, `src/rag/story_rag.py` 구현
-- LLM 모델 선정
-- 채팅 context를 유지하기 위해 어떤 정보들을 RAG에 활용할 수 있을지
-- 단순 채팅이 아니라 스토리 진행도 함께: Pygmalion의 `narrator` role을 활용할 수 있을지
-
-## Fine-tune Qwen on Korean Roleplay Dataset
-
-이 저장소에는 Qwen 모델을 한국어 롤플레이 데이터셋으로 SFT(지도학습) 미세조정하는 스크립트가 포함되어 있습니다.
-
-- 데이터셋: `junidude14/korean_roleplay_dataset_for_chat_game_2` (fields: `instruction`, `input`, `output`)
-- 스크립트: `src/fine_tune/qwen_7b_tune.py`
-- 방식: TRL `SFTTrainer` + PEFT(LoRA/QLoRA), Qwen chat template 사용
-
-사전 준비:
-
-1) GPU 환경 권장 (CUDA). macOS에서는 학습 대신 전처리/검증만 수행 가능.
-2) 의존성 설치 (필요 시 가상환경 사용 권장)
-
+**CLI 옵션:**
 ```bash
+python -m handler \
+  --persona "./data/mock/sample_persona.json" \
+  --chat_history "./data/mock/sample_chat_history.json" \
+  --story "./data/mock/sample_story.json" \
+  --others "./data/mock/sample_request_gpt.json"
+  --message "안녕, 오늘 기분 어때?"
+```
+
+### 2. `src/orchestrator.py`
+한 턴의 대화 처리를 총괄하는 오케스트레이터입니다.
+
+**처리 흐름:**
+1. 사용자 질의를 임베딩 (`src/core/embedding.py`)
+2. 대화 기록 RAG 검색 (`src/rag/chat_rag.py`)
+3. 스토리 컨텍스트 RAG 검색 (`src/rag/story_rag.py`)
+4. Persona + RAG 결과로 프롬프트 구성 (`src/prompt/get_prompt.py`)
+5. LLM 모델 로드 및 응답 생성 (`src/llm/get_llm.py`)
+6. 응답 임베딩 및 메타데이터 포함하여 반환
+
+### 3. `src/schemas/`
+Pydantic 모델로 요청/응답 스키마를 정의합니다.
+
+**`request.py`:**
+- `ChatRequest`: 사용자 요청 전체 (persona, history, story, model config 등)
+- `Persona`: 캐릭터 정보 (이름, 성격, 시나리오, 예시 대화)
+- `Message`: 대화 메시지 (role, content, embedding)
+- `ModelConfig`: 모델 설정 (name, tensor_parallel_size, gpu_memory_utilization)
+- `GenConfig`: 생성 하이퍼파라미터 (temperature, top_p, max_new_tokens)
+
+**`response.py`:**
+- `ChatResponse`: LLM 응답 전체 (reply, usage, retrieved context, timing)
+- `ResponseContent`: 생성된 텍스트와 임베딩
+- `Usage`: 토큰 사용량
+- `Timing`: 각 단계별 처리 시간 (ms)
+
+**`rag.py`:**
+- `RAGChunk`: 검색된 컨텍스트 조각 (text, score, source)
+- `PromptBuildInput`: 프롬프트 빌더 입력
+- `PromptBuildOutput`: 완성된 프롬프트 텍스트
+
+### 4. `src/llm/`
+LLM 모델 인터페이스를 제공합니다.
+
+**`get_llm.py`:**
+- 모델 이름에 따라 적절한 LLM 인스턴스 반환
+- 지원 모델: `gpt-oss-20b`, `solar-10.7b`, `eeve-10.8b`
+
+**`gpt_oss_llm.py`:**
+- vLLM 기반 GPT-OSS 20B 모델 래퍼
+- PagedAttention, continuous batching으로 최적화
+- `generate(prompt, **gen)` → `{"reply": str, "usage": dict, "raw": str}`
+
+**`solar_llm.py` / `eeve_llm.py`:**
+- 각 모델별 특화 래퍼 (transformers 기반)
+
+### 5. `src/prompt/`
+모델별로 최적화된 프롬프트 템플릿을 제공합니다.
+
+**`get_prompt.py`:**
+- 모델 이름에 따라 적절한 프롬프트 빌더 선택
+
+**`gpt_oss_prompt.py`:**
+- GPT-OSS용 단순 텍스트 기반 프롬프트
+- Persona, 예시 대화, RAG 컨텍스트, 대화 기록을 조합
+
+**`solar_prompt.py` / `eeve_prompt.py`:**
+- 각 모델의 chat template에 맞춘 프롬프트 생성
+
+### 6. `src/rag/`
+RAG 컨텍스트 검색 모듈입니다.
+
+**`chat_rag.py`:**
+- 대화 기록에서 유사한 과거 대화 검색
+- 코사인 유사도 기반, top-k 필터링
+
+**`story_rag.py`:**
+- 스토리 이벤트에서 관련 맥락 검색
+- 시간 윈도우 및 유사도 기반 필터링
+
+### 7. `src/core/`
+임베딩 및 인덱스 빌드 유틸리티입니다.
+
+**`embedding.py`:**
+- `sentence-transformers`로 텍스트 임베딩 생성
+- 기본 모델: `paraphrase-multilingual-MiniLM-L12-v2`
+
+**`build_scene_index.py`:**
+- 스토리 장면 벡터 인덱스 구축
+
+### 8. `src/config/config.py`
+환경 변수 및 전역 설정을 관리합니다.
+- 모델 ID, 디폴트 하이퍼파라미터
+- RAG top-k 설정
+- 데이터 디렉토리 경로
+
+### 9. `scripts/`
+데이터 전처리 및 인덱스 빌드 스크립트입니다.
+
+**`build_index.py`:**
+- 대화 기록 벡터 인덱스 생성
+
+**`embed_history.py`:**
+- 대화 메시지 임베딩 일괄 생성
+
+### 10. `data/mock/`
+로컬 테스트용 샘플 데이터입니다.
+- `sample_persona_*.json`: 캐릭터 persona 예시
+- `sample_chat_history.json`: 대화 기록 예시
+- `sample_story.json`: 스토리 이벤트 예시
+- `sample_request_*.json`: 요청 페이로드 예시
+
+## 로컬 실행
+
+### 1. 환경 설정
+```bash
+# 가상환경 생성 및 활성화
+python -m venv .venv
+source .venv/bin/activate  # macOS/Linux
+# .venv\Scripts\activate  # Windows
+
+# 의존성 설치
 pip install -r requirements.txt
 ```
 
-빠른 실행 예시 (GPU):
-
+### 2. 로컬 테스트
 ```bash
-python -m src.fine_tune.qwen_7b_tune \
-    --model_name Qwen/Qwen2.5-7B-Instruct \
-    --output_dir ./outputs/qwen2.5-7b-roleplay-sft \
-    --max_seq_length 2048 \
-    --per_device_train_batch_size 1 \
-    --gradient_accumulation_steps 16 \
-    --num_train_epochs 2 \
-    --lr 2e-4 \
-    --use_qlora \
-    --gradient_checkpointing
+# 기본 실행
+python -m handler
+
+# 커스텀 persona로 실행
+python -m handler \
+  --persona ./data/mock/sample_persona_luffy.json \
+  --message "고기 먹으러 갈래?"
+
+# 특정 모델로 실행
+python -m handler \
+  --others ./data/mock/sample_request_gpt_oss.json \
+  --message "오늘 뭐 했어?"
 ```
 
-옵션 설명:
+### 3. 출력 확인
+```
+[Model Prompt]
+--- 대화 시뮬레이션 ---
+당신은 '루피'입니다.
+...
 
-- `--use_qlora`: 4-bit QLoRA(메모리 절감) 사용. CUDA + bitsandbytes 필요
-- `--use_lora`: 정밀도 기반 LoRA (정수 양자화 사용 안 함)
-- `--packing`: 시퀀스 내 여러 샘플 패킹 (긴 컨텍스트에서 효율 ↑)
-- `--push_to_hub`, `--hub_model_id`: Hugging Face Hub로 push 가능
+[Model Reply]
+오~ 고기! 좋지! 언제 가? 지금 당장?!
 
-데이터 전처리 정책:
+[Timing ms]
+{
+  "total_ms": 1234,
+  "llm_load_ms": 0,
+  "generate_ms": 850,
+  ...
+}
+```
 
-- `instruction`는 system 역할로, `input`의 `USR:/NPC:` 턴은 user/assistant로 매핑, `output`은 최종 assistant 턴으로 붙입니다.
-- 최종 텍스트는 Qwen 토크나이저의 `apply_chat_template`로 생성됩니다.
+## RunPod Serverless 배포
 
-메모리 팁:
+### 1. Docker 이미지 빌드
+```bash
+docker build -t your-registry/chat-service:latest .
+docker push your-registry/chat-service:latest
+```
 
-- 7B 기준 QLoRA로 24GB VRAM에서 학습 가능(설정에 따라 상이). `--gradient_accumulation_steps`와 `--per_device_train_batch_size`를 조정하십시오.
+### 2. RunPod 설정
+- **Image**: `your-registry/chat-service:latest`
+- **GPU**: A100 40GB 이상 권장 (gpt-oss-20b 기준)
+- **Environment Variables**:
+  ```
+  MLCHAT_GPT_OSS_MODEL_ID=openai/gpt-oss-20b
+  MLCHAT_ENV=production
+  ```
+
+### 3. 성능 최적화
+- `tensor_parallel_size=2`: 멀티 GPU 병렬화
+- `gpu_memory_utilization=0.9`: GPU 메모리 사용률
+- `max_model_len=2048`: 최대 시퀀스 길이
+
+### 4. Cold Start 최적화
+- 모델은 컨테이너 시작 시 전역에서 1회 로딩
+- Warm container 재사용으로 지연 시간 최소화
+
+## 지원 모델
+
+| 모델 | 크기 | 특징 | vLLM 지원 |
+|------|------|------|-----------|
+| GPT-OSS | 20B | 베이스 모델, 높은 자유도 | ✅ |
+| Solar | 10.7B | 한국어 특화, 빠른 추론 | ✅ |
+| EEVE | 10.8B | 일상 대화 최적화 | ✅ |
+
+## 성능 벤치마크
+
+**환경**: RTX 5090 (24GB), vLLM, max_new_tokens=256
+
+| 모델 | Cold Start | Warm Generate | Throughput |
+|------|-----------|---------------|------------|
+| GPT-OSS 20B | ~30s | ~1.2s | 200 tok/s |
+| Solar 10.7B | ~15s | ~0.6s | ??? tok/s |
+| EEVE 10.8B | ~15s | ~0.6s | ??? tok/s |
+
+## TODO
+
+- [ ] 대화 기록 벡터 DB 연동 (ChromaDB/Qdrant)
+- [ ] 스토리 RAG 가중치 튜닝
+- [ ] 멀티턴 대화 컨텍스트 윈도우 최적화
+- [ ] Narrator 역할 분리 및 스토리 진행 로직
+- [ ] 감정 분석 및 호감도 동적 업데이트
+- [ ] 응답 품질 평가 메트릭 (coherence, consistency)
+
+## 라이선스
+
+MIT License

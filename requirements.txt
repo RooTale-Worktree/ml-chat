@@ -1,44 +1,48 @@
---index-url https://download.pytorch.org/whl/cu121
-torch==2.1.2
-vllm==0.11.0
+# Core ML/DL frameworks (use PyTorch CUDA index)
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch>=2.2.0
+vllm>=0.10.0
 transformers>=4.39.0
 accelerate>=0.27.0
+
+# Configuration and validation
 pydantic>=2.6.0
 pydantic-settings>=2.0
+python-dotenv
+
+# Serverless and testing
 runpod>=1.6.2
 pytest>=8.2.0
+
+# Embeddings and vector search
 sentence-transformers>=2.2.2
-hf_transfer>=0.1.6
+chromadb==1.1.1
+
+# LangChain ecosystem
 langchain>=0.3.27
 langchain-community>=0.3.31
 langchain-huggingface>=0.0.3
 langchain-core>=0.3.79
 langchain-text-splitters>=0.3.11
-chromadb==1.1.1
+
+# LlamaIndex
 llama-index
 llama-index-embeddings-huggingface
+
+# Fine-tuning and model optimization
 datasets>=2.18.0
 peft>=0.11.0
 trl>=0.9.6
 bitsandbytes>=0.43.0; platform_system != "Darwin"
+
+# Tokenization and model utilities
 sentencepiece>=0.1.99
 safetensors>=0.4.3
 einops>=0.7.0
-pydantic>=2.6.0
-pydantic-settings>=2.0
-runpod>=1.6.2
-pytest>=8.2.0
-sentence-transformers>=2.2.2
-hf_transfer>=0.1.6
-langchain>=0.3.27
-langchain-community>=0.3.31
-langchain-huggingface>=0.0.3
-langchain-core>=0.3.79
-langchain-text-splitters>=0.3.11
-chromadb==1.1.1
-jq==1.10.0
-llama-index
-llama-index-embeddings-huggingface
+
+# Database and storage
 neo4j
-python-dotenv
+
+# Utilities
+hf_transfer>=0.1.6
 

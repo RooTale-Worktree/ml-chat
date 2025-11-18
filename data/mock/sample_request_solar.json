@@ -1,14 +1,14 @@
 {
-  "session_id": "sess_demo_gpt_oss",
+  "session_id": "sess_demo_solar",
   "user_id": "user_demo",
   "model": {
-    "name": "gpt-oss-20b",
+    "name": "solar-10.7b",
     "tensor_parallel_size": 1,
     "gpu_memory_utilization": 0.8,
     "max_model_length": 131072,
     "max_num_seqs": 8,
     "trust_remote_code": true,
-    "dtype": "auto"
+    "dtype": "bfloat16"
   },
   "gen": {
     "max_new_tokens": 1024,

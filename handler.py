@@ -13,18 +13,60 @@ local manual test 사용법:
 from __future__ import annotations
 import argparse
 import json
+import os
 from pathlib import Path
 
 from src.orchestrator import handle_chat
+from src.llm.get_llm import get_llm
+from src.schemas.request import ModelConfig
 import numpy as np
+
+
+# ===== RunPod Serverless optimization: model pre-loading =====
+# Load model once at container start (optimize cold start)
+_PRELOADED_LLM = None
+
+def _init_model():
+    """Load model once at container start (optimize cold start)"""
+    global _PRELOADED_LLM
+    if _PRELOADED_LLM is None:
+        print("[INIT] Loading model for RunPod serverless...")
+        model_name = os.getenv("MLCHAT_MODEL_NAME", "gpt-oss-20b")
+        
+        # vLLM 설정
+        model_cfg = ModelConfig(
+            name=model_name,
+            tensor_parallel_size=int(os.getenv("TENSOR_PARALLEL_SIZE", "1")),
+            gpu_memory_utilization=float(os.getenv("GPU_MEMORY_UTILIZATION", "0.9")),
+        )
+        
+        _PRELOADED_LLM = get_llm(model_name, model_cfg)
+        print(f"[INIT] Model loaded: {model_name}")
+    return _PRELOADED_LLM
+
+# If in RunPod environment, initialize at module load time
+if os.getenv("RUNPOD_ENDPOINT_ID"):
+    _init_model()
 
 
 # Entrypoint
 def handler(event):
+    """
+    RunPod serverless handler.
+    
+    Args:
+        event: {"input": {...}} 형식의 요청
+        
+    Returns:
+        ChatResponse dict
+    """
     payload = event.get('input') if isinstance(event, dict) else event
     if not isinstance(payload, dict):
         raise ValueError("Invalid event payload; expected dict or {'input': dict}")
-    return handle_chat(payload)
+    
+    # Use pre-loaded model
+    llm = _init_model()
+    return handle_chat(payload, llm_instance=llm)
 
 
 """
@@ -93,5 +135,20 @@ if __name__ == "__main__":
     # call handler function
     out = handler({"input": sample})
 
+    # 출력: 모델 응답 텍스트와 타이밍 정보
+    try:
+        # response_contents는 List이므로 첫 번째 아이템의 content를 출력
+        first_content = (
+            out.get("response_contents", [{}])[0].get("content")
+            if isinstance(out, dict) else None
+        )
+        print("\n[Model Reply]\n" + (first_content or "<no content>"))
+        # timing 전체 출력 (ms 단위 세부 항목 포함)
+        timing = out.get("timing", {}) if isinstance(out, dict) else {}
+        print("\n[Timing ms]\n" + json.dumps(timing, ensure_ascii=False, indent=2))
+    except Exception as e:
+        print(f"[Print Error] {e}")
+    
     from pprint import pprint
+    print("\n[Full Response]")
     pprint(out)

@@ -21,6 +21,7 @@ class GPTOssLLM:
         tensor_parallel_size: int = 1,
         gpu_memory_utilization: float = 0.9,
         max_model_len: int = 1024,
+        max_num_seqs: int | None = None,
         trust_remote_code: bool = True,
         dtype: str = "auto",
     ):
@@ -41,9 +42,19 @@ class GPTOssLLM:
             tensor_parallel_size=tensor_parallel_size,
             gpu_memory_utilization=gpu_memory_utilization,
             max_model_len=max_model_len,
+            max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
         )
+    
+    def _get_only_reply(self, reply) -> str:
+        ret = reply
+        if "assistantfinal=" in reply:
+            ret = reply.split("assistantfinal=")[-1].strip()
+        elif "assistantfinal" in reply:
+            ret = reply.split("assistantfinal")[-1].strip()
+        
+        return ret
 
     def generate(self, prompt: str, **gen) -> Dict:
         max_new_tokens = int(gen.get("max_new_tokens", 1024))
@@ -67,7 +78,7 @@ class GPTOssLLM:
         
         # Extract generated text
         generated = output.outputs[0].text
-        reply = generated.strip() if generated.strip() else "(…생각 중…)"
+        reply = self._get_only_reply(generated)
         
         # vLLM provides token counts
         prompt_tokens = len(output.prompt_token_ids)
@@ -92,7 +103,9 @@ def load_gpt_oss_llm(
     tensor_parallel_size: int = 1,
     gpu_memory_utilization: float = 0.9,
     max_model_len: int | None = None,
+    max_num_seqs: int | None = None,
     trust_remote_code: bool = True,
+    dtype: str | None = None,
 ) -> GPTOssLLM:
     """
     Cached factory so orchestrator can re-use heavyweight GPT-OSS vLLM instance.
@@ -109,7 +122,9 @@ def load_gpt_oss_llm(
         tensor_parallel_size=tensor_parallel_size,
         gpu_memory_utilization=gpu_memory_utilization,
         max_model_len=max_model_len,
+        max_num_seqs=max_num_seqs,
         trust_remote_code=trust_remote_code,
+        dtype=dtype,
     )
 
 

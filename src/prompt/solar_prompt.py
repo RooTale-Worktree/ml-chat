@@ -1,37 +1,21 @@
 """
-Prompt builder that renders persona + RAG context for SOLAR models
-using tokenizer.apply_chat_template.
-
-This function is designed to be a drop-in replacement for the gpt-oss builder,
-matching its input and output schemas.
+Prompt builder for SOLAR (Llama-2 Template).
+This builder MANUALLY constructs the Llama-2 chat template string
+because the tokenizer's apply_chat_template is unreliable for this model.
 """
 from __future__ import annotations
-from datetime import datetime, timezone
 from typing import List, Dict
-from functools import lru_cache
-
-from transformers import AutoTokenizer
 
 from src.schemas.request import DialogueTurn
 from src.schemas.rag import PromptBuildInput, PromptBuildOutput, RAGChunk
 
 
-@lru_cache(maxsize=1)
-def _get_solar_tokenizer():
-    """
-    Caches the SOLAR tokenizer to avoid reloading it on every call.
-    """
-    return AutoTokenizer.from_pretrained(
-        "Upstage/SOLAR-10.7B-Instruct-v1.0",
-        trust_remote_code=True
-    )
-
-
 def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
     """
-    Builds a SOLAR-compatible prompt string using apply_chat_template.
+    Builds a SOLAR-compatible prompt string by manually creating
+    the Llama-2 chat template.
     """
-    tokenizer = _get_solar_tokenizer()
+    
     persona = data.persona
     
     rag_lines = []
@@ -61,28 +45,42 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
 {rag_context}
 """
     
-    messages: List[Dict[str, str]] = []
-    messages.append({"role": "system", "content": system_content})
+    BOS = "<s>"
+    EOS = "</s>"
+    B_INST = "[INST]"
+    E_INST = "[/INST]"
+    B_SYS = "<<SYS>>\n"
+    E_SYS = "\n<</SYS>>\n\n"
+
+    prompt_str = f"{BOS}{B_INST} {B_SYS}{system_content}{E_SYS}"
     
-    for turn in persona.example_dialogue:
+    dialogue_turns = persona.example_dialogue + data.recent_chat
+    
+    if dialogue_turns:
+        first_turn = dialogue_turns[0]
+        prompt_str += f"{first_turn.content} {E_INST}"
+        
+        if len(dialogue_turns) > 1 and dialogue_turns[1].role in ["assistant", "character"]:
+            prompt_str += f" {dialogue_turns[1].content.strip()} {EOS}"
+            
+            remaining_turns = dialogue_turns[2:]
+        else:
+            prompt_str += f" {EOS}" # 턴을 닫음
+            remaining_turns = dialogue_turns[1:]
+    else:
+        remaining_turns = []
 
-        role = "assistant" if turn.role in ["assistant", "character"] else "user"
-        messages.append({"role": role, "content": turn.content})
+    for i in range(0, len(remaining_turns), 2):
+        user_turn = remaining_turns[i]
+        prompt_str += f"{BOS}{B_INST} {user_turn.content} {E_INST}"
+        
+        if i + 1 < len(remaining_turns):
+            assistant_turn = remaining_turns[i+1]
+            prompt_str += f" {assistant_turn.content.strip()} {EOS}"
+        else:
+            prompt_str += f" {EOS}"
 
-    for turn in data.recent_chat:
-        role = "assistant" if turn.role in ["assistant", "character"] else "user"
-        messages.append({"role": role, "content": turn.content})
-
-    messages.append({"role": "user", "content": data.user_message})
-
-    try:
-        prompt_str = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-    except Exception as e:
-        raise ValueError(f"Error applying chat template: {e}")
+    prompt_str += f"{BOS}{B_INST} {data.user_message} {E_INST}"
 
     meta = {
         "chat_ctx_count": len(data.chat_context),
@@ -92,6 +90,3 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
     }
     
     return PromptBuildOutput(prompt=prompt_str, meta=meta)
-
-
-__all__ = ["build_prompt_solar"]
