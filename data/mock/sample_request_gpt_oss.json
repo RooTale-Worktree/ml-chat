@@ -3,19 +3,18 @@
   "user_id": "user_demo",
   "model": {
     "name": "gpt-oss-20b",
-    "context_length": 8192,
-    "device": "auto",
+    "tensor_parallel_size": 1,
+    "gpu_memory_utilization": 0.9,
+    "max_model_length": 131072,
+    "trust_remote_code": true,
     "dtype": null
   },
   "gen": {
-    "temperature": 0.7,
+    "max_new_tokens": 1024,
+    "temperature": 0.8,
     "top_p": 0.9,
-    "max_new_tokens": 512,
     "repetition_penalty": 1.05,
-    "stop": [
-      "\nUser:",
-      "\n사용자:"
-    ]
+    "stop": ["USER:", "\nUSER:"]
   },
   "meta": {
     "request_origin": "sample_gpt_oss"

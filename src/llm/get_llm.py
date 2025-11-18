@@ -21,7 +21,7 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
         repo_id = settings.gpt_oss_model_id
         tensor_parallel = model_cfg.get("tensor_parallel_size", 1)
         gpu_mem_util = model_cfg.get("gpu_memory_utilization", 0.9)
-        max_model_len = model_cfg.get("max_model_len", 1024)
+        max_model_len = model_cfg.get("max_model_len", 131_072)
         trust_remote_code = model_cfg.get("trust_remote_code", True)
         dtype = model_cfg.get("dtype", "auto")
         

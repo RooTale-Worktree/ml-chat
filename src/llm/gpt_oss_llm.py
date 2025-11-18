@@ -50,7 +50,7 @@ class GPTOssLLM:
         temperature = float(gen.get("temperature", 0.8))
         top_p = float(gen.get("top_p", 0.95))
         repetition_penalty = float(gen.get("repetition_penalty", 1.05))
-        stop_sequences = _DEFAULT_STOP_STRINGS
+        stop_sequences = gen.get("stop", _DEFAULT_STOP_STRINGS)
 
         # vLLM SamplingParams
         sampling_params = SamplingParams(
