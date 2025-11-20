@@ -1,11 +1,7 @@
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pathlib import Path
 from functools import lru_cache 
-
-from src.schemas.rag import RAGChunk, StoryRAGResult
-from src.schemas.request import StoryEvent 
-
 
 from llama_index.core import StorageContext, load_index_from_storage, VectorStoreIndex
 from llama_index.core.schema import NodeWithScore
@@ -48,7 +44,7 @@ def load_story_index(story_title: str) -> Optional[VectorStoreIndex]:
 def retrieve_story_context(
     story_title: str,        
     user_query: str
-) -> StoryRAGResult:
+) -> List:
     
     all_nodes: List[NodeWithScore] = []
 
@@ -62,17 +58,15 @@ def retrieve_story_context(
     else:
         print(f"'{story_title}' 인덱스가 로드되지 않아 RAG 검색을 건너뜁니다.")
 
-    # 2.결과 변환 (Node -> RAGChunk)
-    chunks: List[RAGChunk] = []
+    # 2.결과 변환 (Node -> List[Dict])
+    results: List[Dict] = []
     for i, node_with_score in enumerate(all_nodes):
         node = node_with_score.node
-        chunks.append(RAGChunk(
-            id=node.id_ or f"retrieved-{i}",
-            source=node.metadata.get("source_document", "unknown_source"),
-            text=node.get_content(),
-            score=node_with_score.score 
-        ))
+        results.append({
+            "text": node.get_content(),
+            "score": node_with_score.score 
+        })
     
-    return StoryRAGResult(context=chunks)
+    return results
 
 __all__ = ["retrieve_story_context"]

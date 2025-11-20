@@ -2,87 +2,129 @@
 Prompt builder that renders persona + RAG context using Harmony format for gpt-oss.
 """
 from __future__ import annotations
-from datetime import datetime, timezone
-from typing import List
-
-from src.schemas.request import DialogueTurn
-from src.schemas.rag import PromptBuildInput, PromptBuildOutput, RAGChunk
-
-prompt_template = """
-당신은 '{character_name}'입니다. '{character_name}'의 persona를 연기해야 합니다.
-- 이름: {character_name}
-- 성격: {persona}
-- 설정: {scenario}
-- 대화 스타일: {speaking_style}
-- 제약 조건: {constraints}
-
----
-[예시 대화]
-{example_dialogue}
----
-[참고 맥락]
-{rag_context}
----
-[대화 기록]
-{chat_history}
-USER: {user_input}
-ASSISTANT:assistantfinal"""
+from datetime import datetime
+from typing import List, Dict
+from openai_harmony import (
+    Author,
+    Conversation,
+    DeveloperContent,
+    HarmonyEncodingName,
+    Message,
+    Role,
+    SystemContent,
+    load_harmony_encoding,
+    ReasoningEffort
+)
 
 
-def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
+def _build_persona_context(persona: Dict) -> str:
+    """
+    Build persona context string from Persona dict.
+    """
+    character_name = persona.get("character_name", "Character")
+    persona_desc = persona.get("persona", "")
+    scenario = persona.get("scenario", "")
+    speaking_style = persona.get("speaking_style", [])
+    constraints = persona.get("constraints", [])
+    example_dialogue = persona.get("example_dialogue", [])
 
-    persona = data.persona
+    speaking_style_str = "\n".join([f"{i+1}. {c}" for i, c in enumerate(speaking_style)])
+    constraints_str = "\n".join([f"{i+1}. {c}" for i, c in enumerate(constraints)])
+    example_dialogue_str = ""
+    if example_dialogue:
+        example_dialogue_str = "[대화 예시]\n" + "\n".join(
+            [f"{turn['role'].upper()}: {turn['content']}" for turn in example_dialogue]
+        )
+
+    # Construct persona context
+    persona_context = f"""
+당신은 '{character_name}'입니다. 아래의 페르소나와 지침을 바탕으로 완벽하게 연기하세요.
+
+[핵심 정체성]
+{persona_desc}
+
+[대화 문맥]
+{scenario}
+
+[말투 및 스타일 (반드시 준수)]
+{speaking_style_str}
+
+[제약 사항 (반드시 준수)]
+{constraints_str}
+
+{example_dialogue_str}
+""".strip()
+    return persona_context
+
+def build_prompt(data: Dict) -> List[Dict]:
+
+    persona = data.get("persona", None)
+    chat_context = data.get("chat_context", [])
+    story_context = data.get("story_context", [])
+    user_message = data.get("user_message", "")
+    reasoning_effort = data.get("reasoning_effort", "low")
+
+    if persona is None:
+        raise ValueError("Persona information is required to build prompt.")
     
-    # 1. example dialogue
-    example_lines = []
-    for turn in persona.example_dialogue:
-        role = persona.character_name if turn.role in ["assistant", "character"] else "User"
-        example_lines.append(f"{role}: {turn.content}")
-    example_dialogue = "\n".join(example_lines) if example_lines else "(예시 없음)"
-    
-    # 2. RAG context
-    rag_lines = []
-    if data.chat_context:
-        rag_lines.append("[대화 기억]")
-        for chunk in data.chat_context:
-            rag_lines.append(f"- {chunk.text}")
-    if data.story_context:
-        rag_lines.append("[스토리 정보]")
-        for chunk in data.story_context:
-            rag_lines.append(f"- {chunk.text}")
-    rag_context = "\n".join(rag_lines) if rag_lines else "(참고 맥락 없음)"
-    
-    # 3. Recent chat history
-    chat_lines = []
-    for turn in data.recent_chat:
-        role = persona.character_name if turn.role in ["assistant", "character"] else "User"
-        chat_lines.append(f"{role}: {turn.content}")
-    chat_history = "\n".join(chat_lines) if chat_lines else "(대화 기록 없음)"
-    
-    # 4. Constraints
-    constraints = "; ".join(persona.constraints) if persona.constraints else "없음"
-    
-    # 5. Fill template with values
-    prompt = prompt_template.format(
-        character_name=persona.character_name,
-        persona=persona.persona,
-        scenario=persona.scenario,
-        speaking_style=persona.speaking_style,
-        constraints=constraints,
-        example_dialogue=example_dialogue,
-        rag_context=rag_context,
-        chat_history=chat_history,
-        user_input=data.user_message
+    # Load Harmony encoding
+    encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
+
+    # Define persona content
+    persona_content = (
+        DeveloperContent.new()
+        .with_instructions(_build_persona_context(persona))
     )
-    
-    # 6. Prepare metadata
-    meta = {
-        "chat_ctx_count": len(data.chat_context),
-        "story_ctx_count": len(data.story_context),
-        "recent_chat_count": len(data.recent_chat),
-    }
-    
-    return PromptBuildOutput(prompt=prompt, meta=meta)
+
+    # Define system content
+    system_config = SystemContent.new()
+    if reasoning_effort == "high":
+        system_config = system_config.with_reasoning_effort(ReasoningEffort.HIGH)
+    elif reasoning_effort == "medium":
+        system_config = system_config.with_reasoning_effort(ReasoningEffort.MEDIUM)
+    else:
+        system_config = system_config.with_reasoning_effort(ReasoningEffort.LOW)
+    system_config = system_config.conversation_start_date(datetime.today().strftime("%Y-%m-%d"))
+    system_messages = Message.from_role_and_content(Role.SYSTEM, system_config)
+
+    # Define chat history content
+    history_messages = []
+    for msg in chat_context:
+        role = msg.get("role", "user").lower()
+        if role == "user":
+            history_messages.append(
+                Message.from_role_and_content(Role.USER, msg.get("content", ""))
+            )
+        elif role == "assistant":
+            history_messages.append(
+                Message.from_role_and_content(Role.ASSISTANT, msg.get("content", ""))
+            )
+
+    # Define story context content
+    story_context_content = DeveloperContent.new()
+    if story_context:
+        story_context_text = "[스토리 관련 정보]\n" + "\n".join(
+            [f"- {story['text']}" for story in story_context]
+        )
+        story_context_content = story_context_content.with_instructions(story_context_text)
+
+    # Current user message
+    current_user_input = Message.from_role_and_content(Role.USER, user_message)
+
+    # Build conversation
+    conversation = Conversation.from_messages(
+        [system_messages] +
+        [Message.from_role_and_content(Role.DEVELOPER, persona_content)] +
+        [Message.from_role_and_content(Role.DEVELOPER, story_context_content)] +
+        history_messages +
+        [current_user_input]
+    )
+
+    # Tokenize for completion
+    tokens = encoding.render_conversation_for_completion(conversation, Role.ASSISTANT)
+    final_prompt = [{"prompt_token_ids": tokens}]
+
+    return final_prompt
 
 
 __all__ = ["build_prompt"]

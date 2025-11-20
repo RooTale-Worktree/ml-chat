@@ -8,44 +8,34 @@ from datetime import datetime
 
 
 Role = Literal["user", "assistant", "system", "character", "narrator"]
-chunk_type = Literal["summary", "character_profile", "character_list",
-                     "location_info", "character_trait"]
 
 
-# persona에서 예시 대화를 관리하기 위한 table
+# Manage example dialogues within persona
 class DialogueTurn(BaseModel):
     role: Role
     content: str
 
 
-# 캐릭터의 persona를 관리
+# Manage character persona information
 class Persona(BaseModel):
-    character_id: UUID4
     character_name: str
     persona: str
     scenario: str
-    speaking_style: str
+    speaking_style: List[str] = Field(default_factory=list)
     constraints: List[str] = Field(default_factory=list)
     example_dialogue: List[DialogueTurn] = Field(default_factory=list)
-    meta: Dict[str, Any] = Field(default_factory=dict)
+    meta: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
-# 사용자 질문, 시스템 답변, 프롬프트를 통합적으로 관리
+# Manage user questions, system answers, and prompts collectively
 class Message(BaseModel):
-    chat_id: UUID4
-    seq_no: int
-    role: Role
     content: str
-    character_id: Optional[UUID4] = None
-    character_name: Optional[str] = None
-    timestamp: Optional[datetime] = None
-    tokens: Optional[int] = None
-    meta: Dict[str, Any] = Field(default_factory=dict)
-    # optional: embedding을 보내는 경우
+    role: Role
     embedding: Optional[List[float]] = None
     embedding_dim: Optional[int] = None
     embedding_model: Optional[str] = None
     embedding_etag: Optional[str] = None
+    meta: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     def to_dialogue_turn(self) -> DialogueTurn:
         return DialogueTurn(
@@ -54,32 +44,44 @@ class Message(BaseModel):
         )
 
 
-# 채팅 기반 RAG를 위한 config
+# Configurations for chat-based RAG
 class ChatRAGConfig(BaseModel):
     top_k_history: int = 6
     history_time_window_min: Optional[int] = None
-    measure: str = "cosine"
-    threshold: float = 0.12
+    measure: Optional[str] = Field(default="cosine")
+    threshold: Optional[float] = Field(default=0.12)
+    meta: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
-# LLM 생성 샘플링 관련 하이퍼파라미터
+class ModelConfig(BaseModel):
+    model_name: str = "gpt-oss-20b"
+    tensor_parallel_size: int = 1
+    gpu_memory_utilization: Optional[float] = 0.9
+    max_model_len: Optional[int] = 131_072
+    max_num_seqs: Optional[int] = 16
+    trust_remote_code: bool = True
+    dtype: Optional[str] = "auto"
+    meta: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+
+# Hyperparameters related to LLM generation sampling
 class GenConfig(BaseModel):
     temperature: float = 0.8
     top_p: float = 0.95
     max_new_tokens: int = 256
-    repetition_penalty: Optional[float] = 1.05 
-    stop: List[str] = Field(default_factory=list)
+    repetition_penalty: Optional[float] = 1.05
+    stop: Optional[List[str]] = Field(default_factory=list)
+    reasoning_effort: Literal["low", "medium", "high"] = "medium"
 
 
-# handler가 처리해야하는 request의 형식
+# Format of the request that the handler should process
 class ChatRequest(BaseModel):
     message: str
-    session_id: Optional[str] = None
-    user_id: Optional[str] = None
+    user_name: Optional[str] = None
     persona: Persona
-    chat_history: Optional[List[Message]] = Field(default=None)
+    chat_history: Optional[List[Message]] = Field(default_factory=list)
     chat_rag_config: Optional[ChatRAGConfig] = Field(default_factory=ChatRAGConfig)
     story_title: Optional[str] = None
-    model: Dict[str, Any] = Field(default_factory=dict)
+    model_config: ModelConfig = Field(default_factory=ModelConfig)
     gen: GenConfig = Field(default_factory=GenConfig)
-    meta: Dict[str, Any] = Field(default_factory=dict)
+    meta: Optional[Dict[str, Any]] = Field(default_factory=dict)

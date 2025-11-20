@@ -1,13 +1,12 @@
 """
-High-level orchestration: combines RAG + persona + LLM.
+High-level orchestration:
+Combines RAG retrieval, Chat history, Persona and makes LLM calls to generate chat responses.
 """
 from __future__ import annotations
 import time
 from typing import Dict, Optional, Any
 
-from src.schemas.request import ChatRequest
 from src.schemas.response import ChatResponse, ResponseContent, ModelInfo, Usage
-from src.schemas.rag import PromptBuildInput
 
 from src.llm.get_llm import get_llm
 from src.prompt.get_prompt import get_prompt
@@ -19,98 +18,97 @@ from src.config.config import settings
 
 def handle_chat(payload: Dict, llm_instance: Optional[Any] = None) -> Dict:
     """
-    Handle a single chat turn.
-    
+    Handle a single chat turn.    
     Args:
         payload: ChatRequest dict
-        llm_instance: 사전 로딩된 LLM 인스턴스 (RunPod serverless 최적화용)
-                     None이면 동적으로 로딩 (로컬 테스트용)
-    
+        llm_instance: Pre-loaded LLM instance. If None, load dynamically.
     Returns:
-        ChatResponse dict
+        ChatResponse: dict
     """
     timing = {}
     start_time = time.time()
 
-    # Parse request
-    req = ChatRequest(**payload)
+    # Parse payload
+    message = payload.get("message", "")
+    user_name = payload.get("user_name", "User")
+    persona = payload.get("persona", None)
+    chat_history = payload.get("chat_history", [])
+    chat_rag_config = payload.get("chat_rag_config", {})
+    story_title = payload.get("story_title", None)
+    model_config = payload.get("model_config", {})
+    gen = payload.get("gen", {})
+    meta = payload.get("meta", {})
 
+    """
+    Since chat RAG is not used, skip query embedding step.
     # Compute query embedding (normalized) for RAG
     tmp_time = time.time()
-    query_embedding = embed_text(req.message)
+    query_embedding = embed_text(message)
     timing["message_embed_ms"] = int((time.time() - tmp_time) * 1000)
+    """
 
-    # Prompt element1: Persona
-    persona = req.persona
-
-    chat_history = req.chat_history or []
-    story_events = req.story or []
-
+    """
+    Chat Rag is not used, rather all chat context is used for prompt directly.
     # Prompt element2: Chatting RAG context
     chat_context = []
     if chat_history:
         tmp_time = time.time()
         chat_rag = retrieve_chat_context(
             chat_history=chat_history,
-            chat_rag_config=req.chat_rag_config,
+            chat_rag_config=chat_rag_config,
             query_embedding=query_embedding,
         )
         timing["chat_retr_ms"] = int((time.time() - tmp_time) * 1000)
         chat_context = chat_rag.context
+    """
 
     # Prompt element3: Story RAG context
-    story_context = []
-    
-    if req.story_title:
+    story_context = []    
+    if story_title:
         tmp_time = time.time()
-        story_rag = retrieve_story_context(
-            story_title=req.story_title,  
-            user_query=req.message
+        story_context = retrieve_story_context(
+            story_title=story_title,
+            user_query=message
         )
         timing["story_retr_ms"] = int((time.time() - tmp_time) * 1000)
-        story_context = story_rag.context
-
-    # Prompt element4: Recent chat history
-    norm_history = [h.to_dialogue_turn() for h in chat_history]
 
     # Build prompt
-    prompt_input = PromptBuildInput(
-        persona=persona,
-        chat_context=chat_context,
-        story_context=story_context,
-        recent_chat=norm_history,
-        user_message=req.message
-    )
-    model_name = req.model.get("name", None)
-    prompt_out = get_prompt(model_name, prompt_input)
+    prompt_input = {
+        "persona": persona,
+        "chat_context": chat_history,
+        "story_context": story_context,
+        "user_message": message,
+        "reasoning_effort": gen.get("reasoning_effort", "medium"),
+    }
+    model_name = model_config.get("name", None)
+    prompt = get_prompt(model_name, prompt_input)
 
-    # LLM generate - 사전 로딩된 인스턴스 사용 또는 동적 로딩
+    # Generate LLM response
     if llm_instance is None:
-        # 로컬 테스트: 동적 로딩
+        # Load LLM dynamically
         tmp_time = time.time()
-        llm = get_llm(model_name, req.model)
+        llm = get_llm(model_name, model_config)
         timing["llm_load_ms"] = int((time.time() - tmp_time) * 1000)
     else:
-        # RunPod serverless: 사전 로딩된 인스턴스 재사용
+        # Use pre-loaded LLM instance
         llm = llm_instance
-        timing["llm_load_ms"] = 0  # 이미 로딩됨
+        timing["llm_load_ms"] = 0
 
     # Generate response
     tmp_time = time.time()
-    gen_result = llm.generate(prompt_out.prompt, **req.gen.model_dump())
+    gen_result = llm.generate(prompt, **gen)
     timing["generate_ms"] = int((time.time() - tmp_time) * 1000)
 
+    """
+    Since chat RAG is not used, skip response embedding step.
     # Embed response content
     tmp_time = time.time()
     resp_embedding = None
     resp_embedding = embed_text(gen_result["reply"])
     timing["response_embed_ms"] = int((time.time() - tmp_time) * 1000)
-
+    """
     response_content = ResponseContent(
         content=gen_result["reply"],
-        embedding=resp_embedding,
-        character_id=req.persona.character_id,
-        character_name=req.persona.character_name,
     )
 
     usage_dict = gen_result.get("usage", {})
@@ -124,8 +122,8 @@ def handle_chat(payload: Dict, llm_instance: Optional[Any] = None) -> Dict:
     model_repo_name = getattr(llm, "model_id", model_name or settings.default_model_id)
     model_info = ModelInfo(
         name=model_repo_name,
-        context_length=req.model.get("context_length", None),
-        dtype=req.model.get("dtype", None),
+        context_length=model_config.get("context_length", None),
+        dtype=model_config.get("dtype", None),
         embedding_model="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     )
 

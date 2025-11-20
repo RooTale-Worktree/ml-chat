@@ -19,8 +19,10 @@ class EeveeLLM:
         tensor_parallel_size: int = 1,
         gpu_memory_utilization: float = 0.9,
         max_model_len: int | None = None,
+        max_num_seqs: int | None = None,
         trust_remote_code: bool = True,
         dtype: str = "bfloat16",
+        meta: Dict | None = None,
     ):
         """
         Args:
@@ -37,8 +39,10 @@ class EeveeLLM:
             tensor_parallel_size=tensor_parallel_size,
             gpu_memory_utilization=gpu_memory_utilization,
             max_model_len=max_model_len,
+            max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
+            **(meta or {})
         )
 
     def generate(self, prompt: str, **gen) -> Dict:
@@ -88,7 +92,10 @@ def load_eeve_llm(
     tensor_parallel_size: int = 1,
     gpu_memory_utilization: float = 0.9,
     max_model_len: int | None = None,
+    max_num_seqs: int | None = None,
     trust_remote_code: bool = True,
+    dtype: str = "bfloat16",
+    meta: Dict | None = None,
 ) -> EeveeLLM:
     """
     Cached factory to re-use the heavyweight EEVE vLLM instance.
@@ -98,7 +105,10 @@ def load_eeve_llm(
         tensor_parallel_size=tensor_parallel_size,
         gpu_memory_utilization=gpu_memory_utilization,
         max_model_len=max_model_len,
+        max_num_seqs=max_num_seqs,
         trust_remote_code=trust_remote_code,
+        dtype=dtype,
+        meta=meta,
     )
 
 

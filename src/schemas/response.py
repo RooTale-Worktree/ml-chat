@@ -10,6 +10,7 @@ from datetime import datetime
 Role = Literal["user", "assistant", "system", "character", "narrator"]
 FinishReason = Literal["stop", "length", "eos", "content_filter", "error"]
 
+
 # 답변 생성에서의 토큰 사용량을 나타내는 메타 데이터
 class Usage(BaseModel):
     prompt_tokens: int
@@ -17,12 +18,12 @@ class Usage(BaseModel):
     total_tokens: int
     finish_reason: Optional[FinishReason] = None
 
+
 # LLM 응답을 관리: 자연어와 embedding 결과 2개를 반환
 class ResponseContent(BaseModel):
     content: str                            # 생성 텍스트
     embedding: Optional[List[float]] = None # 텍스트 embedding
-    character_id: Optional[UUID4] = None    # role이 "character"일 때 연결된 캐릭터
-    character_name: Optional[str] = None
+
 
 # 실행 모델 메타 데이터
 class ModelInfo(BaseModel):
@@ -30,6 +31,7 @@ class ModelInfo(BaseModel):
     context_length: Optional[int] = None
     embedding_model: Optional[str] = None   # 임베딩에 사용한 모델명/버전
     dtype: Optional[str] = None
+
 
 # handler가 반환해야하는 response 형식
 class ChatResponse(BaseModel):

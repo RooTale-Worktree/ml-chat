@@ -24,6 +24,7 @@ class GPTOssLLM:
         max_num_seqs: int | None = None,
         trust_remote_code: bool = True,
         dtype: str = "auto",
+        meta: Dict | None = None,
     ):
         """
         Args:
@@ -45,6 +46,7 @@ class GPTOssLLM:
             max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
+            **(meta or {})
         )
     
     def _get_only_reply(self, reply) -> str:
@@ -106,6 +108,7 @@ def load_gpt_oss_llm(
     max_num_seqs: int | None = None,
     trust_remote_code: bool = True,
     dtype: str | None = None,
+    meta: Dict | None = None,
 ) -> GPTOssLLM:
     """
     Cached factory so orchestrator can re-use heavyweight GPT-OSS vLLM instance.
@@ -125,6 +128,7 @@ def load_gpt_oss_llm(
         max_num_seqs=max_num_seqs,
         trust_remote_code=trust_remote_code,
         dtype=dtype,
+        meta=meta,
     )
 
 

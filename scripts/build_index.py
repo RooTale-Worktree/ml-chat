@@ -27,11 +27,14 @@ from typing import Any, List, Dict
 from neo4j import GraphDatabase
 from src.core.build_scene_index import build_scene_index 
 
+
 URI = "neo4j+ssc://32adcd36.databases.neo4j.io"
 AUTH = ("neo4j", "sKyJKxvWChIunry20Sk2cA-Wi-d-0oZH75LWcZz6zUg")
 
+
 def get_driver():
     return GraphDatabase.driver(URI, auth=AUTH)
+
 
 def run_cypher(query: str) -> List[Dict[str, Any]]:
     records = []
@@ -42,13 +45,14 @@ def run_cypher(query: str) -> List[Dict[str, Any]]:
                 records.append(record.data()) 
     return records
 
+
 def main():
     
     query_story = "MATCH (s:Universe {universe_id: 1}) RETURN s" 
     story_data_list = run_cypher(query_story)
     if not story_data_list:
         print("오류: Story 노드를 찾을 수 없습니다. story_id를 확인하세요.")
-        return
+        raise ValueError("Story 노드 없음")
     
     story_node = story_data_list[0]['s']
     story_data = dict(story_node)

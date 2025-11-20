@@ -2,17 +2,14 @@
 Prompt dispatcher that selects a model-specific template.
 """
 from __future__ import annotations
-from typing import Callable, Dict, Iterable
+from typing import List, Dict
 
-from src.schemas.rag import PromptBuildInput, PromptBuildOutput
 from src.prompt.gpt_oss_prompt import build_prompt as build_gpt_oss_prompt
 from src.prompt.solar_prompt import build_prompt as build_solar_prompt
 from src.prompt.eeve_prompt import build_prompt as build_eeve_prompt
 
-PromptBuilder = Callable[[PromptBuildInput], PromptBuildOutput]
 
-
-def get_prompt(model_name: str | None, data: PromptBuildInput) -> PromptBuildOutput:
+def get_prompt(model_name: str | None, data: Dict) -> List[Dict]:
     """
     Resolve the proper prompt builder for the requested model.
     """ 
@@ -26,4 +23,4 @@ def get_prompt(model_name: str | None, data: PromptBuildInput) -> PromptBuildOut
         raise ValueError(f"Not supported model for prompt building: {model_name}")
 
 
-__all__ = ["get_prompt", "PromptBuilder"]
+__all__ = ["get_prompt"]

@@ -11,9 +11,7 @@ local manual test 사용법:
         --others: 그 외의 ChatRequest 정보가 저장된 mock-up 파일 경로를 지정합니다.
 """
 from __future__ import annotations
-import argparse
-import json
-import os
+import argparse, json, os
 from pathlib import Path
 
 from src.orchestrator import handle_chat
