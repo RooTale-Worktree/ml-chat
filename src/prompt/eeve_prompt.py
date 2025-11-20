@@ -23,7 +23,7 @@ def _get_eeve_tokenizer():
     )
 
 
-def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
+def build_prompt(prompt_input: PromptBuildInput) -> PromptBuildOutput:
     """
     Builds an EEVE-compatible prompt string using apply_chat_template.
     (This logic is identical to build_prompt_solar as both benefit
@@ -31,16 +31,16 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
     """
     
     tokenizer = _get_eeve_tokenizer()
-    persona = data.persona
+    persona = prompt_input.persona
     
     rag_lines = []
-    if data.chat_context:
+    if prompt_input.chat_context:
         rag_lines.append("[대화 기억]")
-        for chunk in data.chat_context:
+        for chunk in prompt_input.chat_context:
             rag_lines.append(f"- {chunk.text}")
-    if data.story_context:
+    if prompt_input.story_context:
         rag_lines.append("[스토리 정보]")
-        for chunk in data.story_context:
+        for chunk in prompt_input.story_context:
             rag_lines.append(f"- {chunk.text}")
     rag_context = "\n".join(rag_lines) if rag_lines else "(참고 맥락 없음)"
 
@@ -67,11 +67,11 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
         role = "assistant" if turn.role in ["assistant", "character"] else "user"
         messages.append({"role": role, "content": turn.content})
 
-    for turn in data.recent_chat:
+    for turn in prompt_input.recent_chat:
         role = "assistant" if turn.role in ["assistant", "character"] else "user"
         messages.append({"role": role, "content": turn.content})
 
-    messages.append({"role": "user", "content": data.user_message})
+    messages.append({"role": "user", "content": prompt_input.user_message})
 
     try:
         prompt_str = tokenizer.apply_chat_template(
@@ -83,9 +83,9 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
         raise ValueError(f"Error applying chat template: {e}")
 
     meta = {
-        "chat_ctx_count": len(data.chat_context),
-        "story_ctx_count": len(data.story_context),
-        "recent_chat_count": len(data.recent_chat),
+        "chat_ctx_count": len(prompt_input.chat_context),
+        "story_ctx_count": len(prompt_input.story_context),
+        "recent_chat_count": len(prompt_input.recent_chat),
         "example_chat_count": len(persona.example_dialogue),
     }
     

@@ -10,22 +10,22 @@ from src.schemas.request import DialogueTurn
 from src.schemas.rag import PromptBuildInput, PromptBuildOutput, RAGChunk
 
 
-def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
+def build_prompt(prompt_input: PromptBuildInput) -> PromptBuildOutput:
     """
     Builds a SOLAR-compatible prompt string by manually creating
     the Llama-2 chat template.
     """
     
-    persona = data.persona
+    persona = prompt_input.persona
     
     rag_lines = []
-    if data.chat_context:
+    if prompt_input.chat_context:
         rag_lines.append("[대화 기억]")
-        for chunk in data.chat_context:
+        for chunk in prompt_input.chat_context:
             rag_lines.append(f"- {chunk.text}")
-    if data.story_context:
+    if prompt_input.story_context:
         rag_lines.append("[스토리 정보]")
-        for chunk in data.story_context:
+        for chunk in prompt_input.story_context:
             rag_lines.append(f"- {chunk.text}")
     rag_context = "\n".join(rag_lines) if rag_lines else "(참고 맥락 없음)"
 
@@ -54,7 +54,7 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
 
     prompt_str = f"{BOS}{B_INST} {B_SYS}{system_content}{E_SYS}"
     
-    dialogue_turns = persona.example_dialogue + data.recent_chat
+    dialogue_turns = persona.example_dialogue + prompt_input.recent_chat
     
     if dialogue_turns:
         first_turn = dialogue_turns[0]
@@ -80,12 +80,12 @@ def build_prompt(data: PromptBuildInput) -> PromptBuildOutput:
         else:
             prompt_str += f" {EOS}"
 
-    prompt_str += f"{BOS}{B_INST} {data.user_message} {E_INST}"
+    prompt_str += f"{BOS}{B_INST} {prompt_input.user_message} {E_INST}"
 
     meta = {
-        "chat_ctx_count": len(data.chat_context),
-        "story_ctx_count": len(data.story_context),
-        "recent_chat_count": len(data.recent_chat),
+        "chat_ctx_count": len(prompt_input.chat_context),
+        "story_ctx_count": len(prompt_input.story_context),
+        "recent_chat_count": len(prompt_input.recent_chat),
         "example_chat_count": len(persona.example_dialogue),
     }
     

@@ -17,7 +17,7 @@ from openai_harmony import (
 )
 
 
-def _build_persona_context(persona: Dict) -> str:
+def _build_persona_context(persona: Dict, user_name: str) -> str:
     """
     Build persona context string from Persona dict.
     """
@@ -38,7 +38,8 @@ def _build_persona_context(persona: Dict) -> str:
 
     # Construct persona context
     persona_context = f"""
-당신은 '{character_name}'입니다. 아래의 페르소나와 지침을 바탕으로 완벽하게 연기하세요.
+당신은 '{character_name}'입니다. 당신은 '{user_name}'과 대화 중입니다.
+아래의 페르소나와 지침을 바탕으로 완벽하게 연기하세요.
 
 [핵심 정체성]
 {persona_desc}
@@ -56,13 +57,15 @@ def _build_persona_context(persona: Dict) -> str:
 """.strip()
     return persona_context
 
-def build_prompt(data: Dict) -> List[Dict]:
 
-    persona = data.get("persona", None)
-    chat_context = data.get("chat_context", [])
-    story_context = data.get("story_context", [])
-    user_message = data.get("user_message", "")
-    reasoning_effort = data.get("reasoning_effort", "low")
+def build_prompt(prompt_input: Dict) -> List[Dict]:
+
+    persona = prompt_input.get("persona", None)
+    user_name = prompt_input.get("user_name", "User")
+    chat_context = prompt_input.get("chat_context", [])
+    story_context = prompt_input.get("story_context", [])
+    user_message = prompt_input.get("user_message", "")
+    reasoning_effort = prompt_input.get("reasoning_effort", "low")
 
     if persona is None:
         raise ValueError("Persona information is required to build prompt.")
@@ -73,7 +76,7 @@ def build_prompt(data: Dict) -> List[Dict]:
     # Define persona content
     persona_content = (
         DeveloperContent.new()
-        .with_instructions(_build_persona_context(persona))
+        .with_instructions(_build_persona_context(persona, user_name))
     )
 
     # Define system content

@@ -75,6 +75,7 @@ def handle_chat(payload: Dict, llm_instance: Optional[Any] = None) -> Dict:
     # Build prompt
     prompt_input = {
         "persona": persona,
+        "user_name": user_name,
         "chat_context": chat_history,
         "story_context": story_context,
         "user_message": message,
