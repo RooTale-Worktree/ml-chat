@@ -1,21 +1,22 @@
 {
-  "session_id": "sess_demo_gpt_oss",
-  "user_id": "user_demo",
-  "model": {
-    "name": "gpt-oss-20b",
+  "user_name": "조로",
+  "model_config": {
+    "model_name": "gpt-oss-20b",
     "tensor_parallel_size": 1,
     "gpu_memory_utilization": 0.8,
-    "max_model_length": 131072,
+    "max_model_len": 131072,
     "max_num_seqs": 8,
     "trust_remote_code": true,
-    "dtype": "auto"
+    "dtype": "auto",
+    "meta": {}
   },
   "gen": {
-    "max_new_tokens": 1024,
-    "temperature": 0.8,
+    "temperature": 0.7,
     "top_p": 0.9,
+    "max_new_tokens": 512,
     "repetition_penalty": 1.05,
-    "stop": ["USER:", "\nUSER:"]
+    "stop": ["USER:", "\nUSER:"],
+    "reasoning_effort": "medium"
   },
   "meta": {
     "request_origin": "sample_gpt_oss"

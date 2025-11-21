@@ -1,32 +1,20 @@
 [
   {
-    "chat_id": "5e4a2c3b-0d8a-4b63-9c2f-d71f3e9a1a01",
-    "seq_no": 1,
-    "role": "user",
     "content": "안녕?",
-    "character_id": "11111111-1111-4111-8111-111111111111",
-    "character_name": "Alice",
-    "timestamp": "2025-10-10T10:00:00",
-    "tokens": null,
-    "meta": {},
+    "role": "user",
     "embedding_dim": 384,
     "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
     "embedding_etag": "sha1:0c26aa7b21f177658276a420c390090638af6a1e",
-    "embedding_ref": "data/mock/vector/sha1:0c26aa7b21f177658276a420c390090638af6a1e.npy"
+    "embedding_ref": "data/mock/vector/sha1:0c26aa7b21f177658276a420c390090638af6a1e.npy",
+    "meta": {}
   },
   {
-    "chat_id": "5e4a2c3b-0d8a-4b63-9c2f-d71f3e9a1a01",
-    "seq_no": 2,
-    "role": "character",
     "content": "안녕! 반가워 😊",
-    "character_id": "11111111-1111-4111-8111-111111111111",
-    "character_name": "Alice",
-    "timestamp": "2025-10-10T10:00:02",
-    "tokens": null,
-    "meta": {},
+    "role": "character",
     "embedding_dim": 384,
     "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
     "embedding_etag": "sha1:6a5009a8cd7490c2121130087542b613a7cf3a7d",
-    "embedding_ref": "data/mock/vector/sha1:6a5009a8cd7490c2121130087542b613a7cf3a7d.npy"
+    "embedding_ref": "data/mock/vector/sha1:6a5009a8cd7490c2121130087542b613a7cf3a7d.npy",
+    "meta": {}
   }
 ]
