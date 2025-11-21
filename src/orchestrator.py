@@ -35,7 +35,7 @@ def handle_chat(payload: Dict, llm_instance: Optional[Any] = None) -> Dict:
     chat_history = payload.get("chat_history", [])
     chat_rag_config = payload.get("chat_rag_config", {})
     story_title = payload.get("story_title", None)
-    model_config = payload.get("model_config", {})
+    model_config = payload.get("model_cfg", {})
     gen = payload.get("gen", {})
     meta = payload.get("meta", {})
 

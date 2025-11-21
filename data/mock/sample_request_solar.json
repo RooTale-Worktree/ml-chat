@@ -1,6 +1,6 @@
 {
   "user_name": "조로",
-  "model_config": {
+  "model_cfg": {
     "model_name": "solar-10.7b",
     "tensor_parallel_size": 1,
     "gpu_memory_utilization": 0.8,
