@@ -25,22 +25,19 @@ class ResponseContent(BaseModel):
     embedding: Optional[List[float]] = None # 텍스트 embedding
 
 
-# 실행 모델 메타 데이터
-class ModelInfo(BaseModel):
-    name: Optional[str] = None              # 실제 사용 모델명
-    context_length: Optional[int] = None
-    embedding_model: Optional[str] = None   # 임베딩에 사용한 모델명/버전
-    dtype: Optional[str] = None
+class Timing(BaseModel):
+    message_embed_ms: Optional[int] = None
+    chat_retr_ms: Optional[int] = None
+    story_retr_ms: Optional[int] = None
+    llm_load_ms: int
+    generate_ms: int
+    response_embed_ms: Optional[int] = None
+    total_ms: int
 
 
 # handler가 반환해야하는 response 형식
 class ChatResponse(BaseModel):
-    session_id: str
     responded_as: Literal["narrator", "character"] = "character"
     response_contents: List[ResponseContent]                   # 보통 1개, 샘플링/beam 시 N개 가능
     usage: Optional[Usage] = None
-
-    # 실행/디버깅 메타
-    model_info: Optional[ModelInfo] = None
-    timing: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    timing: Optional[Timing] = None
