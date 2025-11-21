@@ -80,7 +80,7 @@ class ChatRequest(BaseModel):
     user_name: Optional[str] = None
     persona: Persona
     chat_history: Optional[List[Message]] = Field(default_factory=list)
-    chat_rag_config: Optional[ChatRAGConfig] = Field(default_factory=None)
+    chat_rag_config: Optional[ChatRAGConfig] = None
     story_title: Optional[str] = None
     model_config: ModelConfig = Field(default_factory=ModelConfig)
     gen: GenConfig = Field(default_factory=GenConfig)
