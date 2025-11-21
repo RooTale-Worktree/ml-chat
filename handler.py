@@ -23,23 +23,36 @@ import numpy as np
 # ===== RunPod Serverless optimization: model pre-loading =====
 # Load model once at container start (optimize cold start)
 _PRELOADED_LLM = None
+_PRELOADED_MODEL_NAME = None
 
-def _init_model():
+def _init_model(model_cfg: dict):
     """Load model once at container start (optimize cold start)"""
-    global _PRELOADED_LLM
-    if _PRELOADED_LLM is None:
-        print("[INIT] Loading model for RunPod serverless...")
-        model_name = os.getenv("MLCHAT_MODEL_NAME", "gpt-oss-20b")
-        
-        # vLLM 설정
-        model_cfg = ModelConfig(
-            name=model_name,
-            tensor_parallel_size=int(os.getenv("TENSOR_PARALLEL_SIZE", "1")),
-            gpu_memory_utilization=float(os.getenv("GPU_MEMORY_UTILIZATION", "0.9")),
-        )
-        
-        _PRELOADED_LLM = get_llm(model_name, model_cfg)
-        print(f"[INIT] Model loaded: {model_name}")
+    
+    global _PRELOADED_LLM, _PRELOADED_MODEL_NAME
+    
+    # Determine requested model name
+    requested_model = model_cfg.get("model_name")
+    if not requested_model:
+        requested_model = os.getenv("MLCHAT_MODEL_NAME", "gpt-oss-20b")
+    
+    # If already loaded and same model, return cached instance
+    if _PRELOADED_LLM is not None and _PRELOADED_MODEL_NAME == requested_model:
+        print(f"[INIT] Using cached model: {requested_model}")
+        return _PRELOADED_LLM
+    
+    # Load new model
+    print(f"[INIT] Loading model for RunPod serverless: {requested_model}")
+    
+    model_config = ModelConfig(
+        model_name=requested_model,
+        tensor_parallel_size=int(os.getenv("TENSOR_PARALLEL_SIZE", "1")),
+        gpu_memory_utilization=float(os.getenv("GPU_MEMORY_UTILIZATION", "0.9")),
+    )
+    
+    _PRELOADED_LLM = get_llm(requested_model, model_config)
+    _PRELOADED_MODEL_NAME = requested_model
+    print(f"[INIT] Model loaded: {requested_model}")
+    
     return _PRELOADED_LLM
 
 # If in RunPod environment, initialize at module load time
@@ -63,7 +76,7 @@ def handler(event):
         raise ValueError("Invalid event payload; expected dict or {'input': dict}")
     
     # Use pre-loaded model
-    llm = _init_model()
+    llm = _init_model(payload.get("model_cfg", {}))
     return handle_chat(payload, llm_instance=llm)
 
 
