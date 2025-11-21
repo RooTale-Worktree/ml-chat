@@ -106,26 +106,21 @@ if __name__ == "__main__":
                         default="./data/mock/sample_persona.json", help="mock up persona")
     parser.add_argument("--chat_history", type=str,
                         default="./data/mock/sample_chat_history.json", help="mock up message chat history")
-    parser.add_argument("--story", type=str,
-                        default="./data/mock/sample_story.json", help="mock up story")
     parser.add_argument("--message", type=str, default="안녕, 오늘 기분 어때?", help="user message")
     parser.add_argument("--others", type=str,
                         default="./data/mock/sample_request_gpt_oss.json", help="other request metas")
     args = parser.parse_args()
 
     path_chat_history = None if args.chat_history == "" else args.chat_history
-    path_story = None if args.story == "" else args.story
 
     persona = load_json(args.persona)
     chat_history = load_vector(load_json(path_chat_history)) if path_chat_history else []
-    story = load_vector(load_json(path_story)) if path_story else []
     others = load_json(args.others)
 
     # structure sample request
     sample = {
         "persona": persona,
         "chat_history": chat_history,
-        "story": story,
         "message": args.message,
         **others
     }

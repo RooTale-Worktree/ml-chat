@@ -1,5 +1,6 @@
 {
   "user_name": "조로",
+  "story_title": "string",
   "model_cfg": {
     "model_name": "solar-10.7b",
     "tensor_parallel_size": 1,
