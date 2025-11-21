@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse, json, os
 from pathlib import Path
 
+from src.config.config import settings
 from src.orchestrator import handle_chat
 from src.llm.get_llm import get_llm
 from src.schemas.request import ModelConfig
@@ -33,7 +34,7 @@ def _init_model(model_cfg: dict):
     # Determine requested model name
     requested_model = model_cfg.get("model_name")
     if not requested_model:
-        requested_model = os.getenv("MLCHAT_MODEL_NAME", "gpt-oss-20b")
+        requested_model = settings.default_model_name
     
     # If already loaded and same model, return cached instance
     if _PRELOADED_LLM is not None and _PRELOADED_MODEL_NAME == requested_model:
@@ -43,13 +44,7 @@ def _init_model(model_cfg: dict):
     # Load new model
     print(f"[INIT] Loading model for RunPod serverless: {requested_model}")
     
-    model_config = ModelConfig(
-        model_name=requested_model,
-        tensor_parallel_size=int(os.getenv("TENSOR_PARALLEL_SIZE", "1")),
-        gpu_memory_utilization=float(os.getenv("GPU_MEMORY_UTILIZATION", "0.9")),
-    )
-    
-    _PRELOADED_LLM = get_llm(requested_model, model_config)
+    _PRELOADED_LLM = get_llm(requested_model, model_cfg)
     _PRELOADED_MODEL_NAME = requested_model
     print(f"[INIT] Model loaded: {requested_model}")
     
@@ -76,7 +71,9 @@ def handler(event):
         raise ValueError("Invalid event payload; expected dict or {'input': dict}")
     
     # Use pre-loaded model
-    llm = _init_model(payload.get("model_cfg", {}))
+    model_cfg = payload.get("model_cfg", {})
+
+    llm = _init_model(model_cfg)
     return handle_chat(payload, llm_instance=llm)
 
 
