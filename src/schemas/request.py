@@ -29,7 +29,8 @@ class Persona(BaseModel):
 
 # Manage user questions, system answers, and prompts collectively
 class Message(BaseModel):
-    content: str
+    narrative: Optional[str] = None
+    character_message: str
     role: Role
     embedding: Optional[List[float]] = None
     embedding_dim: Optional[int] = None
@@ -40,7 +41,7 @@ class Message(BaseModel):
     def to_dialogue_turn(self) -> DialogueTurn:
         return DialogueTurn(
             role=self.role,
-            content=self.content,
+            content=self.character_message,
         )
 
 

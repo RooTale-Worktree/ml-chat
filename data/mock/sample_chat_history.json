@@ -1,11 +1,12 @@
 [
   {
-    "content": "안녕?",
+    "character_message": "안녕?",
     "role": "user",
     "meta": {}
   },
   {
-    "content": "안녕! 반가워 😊",
+    "narrative": "상대방에게 반갑게 인사를 건넨다.",
+    "character_message": "안녕! 반가워 😊",
     "role": "character",
     "meta": {}
   }

@@ -2,6 +2,7 @@
 GPT-OSS LLM adapter using vLLM for high-performance inference.
 """
 from __future__ import annotations
+import re
 from functools import lru_cache
 from typing import Dict, List, Sequence
 
@@ -68,6 +69,17 @@ class GPTOssLLM:
             cot_content = cot_content.strip()
         
         return cot_content, reply_content
+    
+    def _parse_narrative_response(self, text: str):
+        """ Parse generated text to extract narrative and character parts. """
+        narrative_match = re.search(r'"narrative"\s*:\s*"(.*?)(?<!\\)"', text, re.DOTALL)
+        character_match = re.search(r'"character"\s*:\s*"(.*?)(?<!\\)"', text, re.DOTALL)
+
+        narrative = narrative_match.group(1) if narrative_match else ""
+        character = character_match.group(1) if character_match else text # 실패 시 전체 반환
+    
+        return narrative, character
+
 
     def generate(self, prompt: str, **gen) -> Dict:
         max_new_tokens = int(gen.get("max_new_tokens", 1024))
@@ -92,10 +104,12 @@ class GPTOssLLM:
         # Extract generated text
         generated_full_text = output.outputs[0].text
         cot, reply = self._parse_generated_text(generated_full_text)
+        narrative, character_message = self._parse_narrative_response(reply)
 
         # print logs
         print(f"[Handler] CoT: {cot}")
-        print(f"[Handler] Reply: {reply}")
+        print(f"[Handler] Narrative: {narrative}")
+        print(f"[Handler] Character: {character_message}")
         
         # vLLM provides token counts
         prompt_tokens = len(output.prompt_token_ids)
@@ -108,7 +122,8 @@ class GPTOssLLM:
             "stop_reason": finish_reason,
         }
         return {
-            "reply": reply,
+            "narrative": narrative,
+            "character_message": character_message,
             "usage": usage,
             "cot": cot,
         }

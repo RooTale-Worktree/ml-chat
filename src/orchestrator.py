@@ -108,7 +108,8 @@ def handle_chat(payload: Dict, llm_instance: Optional[Any] = None) -> Dict:
         timing["response_embed_ms"] = int((time.time() - tmp_time) * 1000)
 
     response_content = ResponseContent(
-        content=gen_result["reply"],
+        narrative=gen_result["narrative"],
+        character_message=gen_result["character_message"],
         embedding=resp_embedding
     )
 
@@ -127,7 +128,7 @@ def handle_chat(payload: Dict, llm_instance: Optional[Any] = None) -> Dict:
     # Assemble final response
     resp = ChatResponse(
         responded_as="character",
-        response_contents=[response_content],
+        response_contents=response_content,
         usage=usage,
         timing=timing_obj,
     )

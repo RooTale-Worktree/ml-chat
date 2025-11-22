@@ -21,8 +21,9 @@ class Usage(BaseModel):
 
 # LLM 응답을 관리: 자연어와 embedding 결과 2개를 반환
 class ResponseContent(BaseModel):
-    content: str                            # 생성 텍스트
-    embedding: Optional[List[float]] = None # 텍스트 embedding
+    narrative: str
+    character_message: str
+    embedding: Optional[List[float]] = None
 
 
 class Timing(BaseModel):
@@ -38,6 +39,6 @@ class Timing(BaseModel):
 # handler가 반환해야하는 response 형식
 class ChatResponse(BaseModel):
     responded_as: Literal["narrator", "character"] = "character"
-    response_contents: List[ResponseContent]                   # 보통 1개, 샘플링/beam 시 N개 가능
+    response_contents: ResponseContent
     usage: Optional[Usage] = None
     timing: Optional[Timing] = None

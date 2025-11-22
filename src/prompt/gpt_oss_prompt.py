@@ -2,6 +2,7 @@
 Prompt builder that renders persona + RAG context using Harmony format for gpt-oss.
 """
 from __future__ import annotations
+import json
 from datetime import datetime
 from typing import List, Dict
 from openai_harmony import (
@@ -110,8 +111,13 @@ def build_prompt(prompt_input: Dict) -> List[Dict]:
                 Message.from_role_and_content(Role.USER, msg.get("content", ""))
             )
         elif role == "assistant":
+            assistant_json_obj = {
+                "narrative": msg.get("narrative", ""),
+                "character_message": msg.get("character_message", "")
+            }
+            formatted_content = json.dumps(assistant_json_obj, ensure_ascii=False)
             history_messages.append(
-                Message.from_role_and_content(Role.ASSISTANT, msg.get("content", ""))
+                Message.from_role_and_content(Role.ASSISTANT, formatted_content)
             )
 
     # Define story context content
