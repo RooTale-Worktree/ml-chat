@@ -47,14 +47,29 @@ class GPTOssLLM:
             dtype=dtype,
         )
     
-    def _get_only_reply(self, reply) -> str:
-        ret = reply
-        if "assistantfinal=" in reply:
-            ret = reply.split("assistantfinal=")[-1].strip()
-        elif "assistantfinal" in reply:
-            ret = reply.split("assistantfinal")[-1].strip()
+    def _parse_generated_text(self, text: str):
+        """
+        Parse generated text to separate CoT and final reply.
+        """
+        cot_content = ""
+        reply_content = text
+
+        # 1. Reply 마커로 분리 시도
+        if "assistantfinal=" in text:
+            parts = text.split("assistantfinal=", 1)
+            cot_content = parts[0]
+            reply_content = parts[1].strip()
+        elif "assistantfinal" in text:
+            parts = text.split("assistantfinal", 1)
+            cot_content = parts[0]
+            reply_content = parts[1].strip()            
+            # 2. CoT 마커 제거 (앞부분에 붙어있다면)
+        if cot_content.startswith("analysis"):
+            cot_content = cot_content[len("analysis"):].strip()
+        else:
+            cot_content = cot_content.strip()
         
-        return ret
+        return cot_content, reply_content
 
     def generate(self, prompt: str, **gen) -> Dict:
         max_new_tokens = int(gen.get("max_new_tokens", 1024))
@@ -77,8 +92,11 @@ class GPTOssLLM:
         output = outputs[0]
         
         # Extract generated text
-        generated = output.outputs[0].text
-        reply = self._get_only_reply(generated)
+        generated_full_text = output.outputs[0].text
+        cot, reply = self._parse_generated_text(generated_full_text)
+
+        print(f"[Handler] CoT: {cot}")
+        print(f"[Handler] Reply: {reply}")
         
         # vLLM provides token counts
         prompt_tokens = len(output.prompt_token_ids)
@@ -93,7 +111,7 @@ class GPTOssLLM:
         return {
             "reply": reply,
             "usage": usage,
-            "raw": generated,
+            "cot": cot,
         }
 
 
