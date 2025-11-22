@@ -19,7 +19,6 @@ class SolarLLM:
         max_num_seqs: int | None = None,
         trust_remote_code: bool = True,
         dtype: str = "bfloat16",
-        meta: Dict | None = None,
     ):
         """
         Args:
@@ -39,7 +38,6 @@ class SolarLLM:
             max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
-            **(meta or {})
         )
         
         self.hf_tokenizer = self.llm.llm_engine.tokenizer
@@ -109,7 +107,6 @@ def load_solar_llm(
     max_num_seqs: int | None = None,
     trust_remote_code: bool = True,
     dtype: str = "bfloat16",
-    meta: Dict | None = None,
 ) -> SolarLLM:
     """
     Cached factory to re-use the heavyweight SOLAR vLLM instance.
@@ -122,7 +119,6 @@ def load_solar_llm(
         max_num_seqs=max_num_seqs,
         trust_remote_code=trust_remote_code,
         dtype=dtype,
-        meta=meta,
     )
 
 

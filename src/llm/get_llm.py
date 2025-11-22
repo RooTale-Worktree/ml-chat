@@ -25,7 +25,6 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
         max_num_seqs = model_cfg.get("max_num_seqs", 16)
         trust_remote_code = model_cfg.get("trust_remote_code", True)
         dtype = model_cfg.get("dtype", "auto")
-        meta = model_cfg.get("meta", {})
         
         return load_gpt_oss_llm(
             model_id=repo_id,
@@ -35,7 +34,6 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
             max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
-            meta=meta,
         )
     elif model_name == "solar-10.7b":
         repo_id = settings.solar_model_id
@@ -45,7 +43,6 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
         max_num_seqs = model_cfg.get("max_num_seqs", 16)
         trust_remote_code = model_cfg.get("trust_remote_code", True)
         dtype = model_cfg.get("dtype", "bfloat16")
-        meta = model_cfg.get("meta", {})
         
         return load_solar_llm(
             model_id=repo_id,
@@ -55,7 +52,6 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
             max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
-            meta=meta,
         )
     elif model_name == "eeve-10.8b":
         repo_id = settings.eeve_model_id
@@ -65,7 +61,6 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
         max_num_seqs = model_cfg.get("max_num_seqs", 16)
         trust_remote_code = model_cfg.get("trust_remote_code", True)
         dtype = model_cfg.get("dtype", "bfloat16")
-        meta = model_cfg.get("meta", {})
         
         return load_eeve_llm(
             model_id=repo_id,
@@ -75,7 +70,6 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
             max_num_seqs=max_num_seqs,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
-            meta=meta,
         )
     else:
         raise ValueError(f"Not supported model: {model_name}")

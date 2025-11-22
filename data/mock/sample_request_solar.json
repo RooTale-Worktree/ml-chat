@@ -8,8 +8,7 @@
     "max_model_len": 131072,
     "max_num_seqs": 8,
     "trust_remote_code": true,
-    "dtype": "auto",
-    "meta": {}
+    "dtype": "auto"
   },
   "gen": {
     "temperature": 0.7,

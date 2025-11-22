@@ -61,7 +61,6 @@ class ModelConfig(BaseModel):
     max_num_seqs: Optional[int] = 16
     trust_remote_code: bool = True
     dtype: Optional[str] = "auto"
-    meta: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
 # Hyperparameters related to LLM generation sampling

@@ -32,21 +32,21 @@ def _init_model(model_cfg: dict):
     global _PRELOADED_LLM, _PRELOADED_MODEL_NAME
     
     # Determine requested model name
-    requested_model = model_cfg.get("model_name")
-    if not requested_model:
-        requested_model = settings.default_model_name
+    model_name = model_cfg.get("model_name", None)
+    if not model_name:
+        model_name = settings.default_model_name
     
     # If already loaded and same model, return cached instance
-    if _PRELOADED_LLM is not None and _PRELOADED_MODEL_NAME == requested_model:
-        print(f"[INIT] Using cached model: {requested_model}")
+    if _PRELOADED_LLM is not None and _PRELOADED_MODEL_NAME == model_name:
+        print(f"[INIT] Using cached model: {model_name}")
         return _PRELOADED_LLM
     
     # Load new model
-    print(f"[INIT] Loading model for RunPod serverless: {requested_model}")
+    print(f"[INIT] Loading model for RunPod serverless: {model_name}")
     
-    _PRELOADED_LLM = get_llm(requested_model, model_cfg)
-    _PRELOADED_MODEL_NAME = requested_model
-    print(f"[INIT] Model loaded: {requested_model}")
+    _PRELOADED_LLM = get_llm(model_name, model_cfg)
+    _PRELOADED_MODEL_NAME = model_name
+    print(f"[INIT] Model loaded: {model_name}")
     
     return _PRELOADED_LLM
 
@@ -59,10 +59,8 @@ if os.getenv("RUNPOD_ENDPOINT_ID"):
 def handler(event):
     """
     RunPod serverless handler.
-    
     Args:
         event: {"input": {...}} 형식의 요청
-        
     Returns:
         ChatResponse dict
     """
@@ -73,13 +71,13 @@ def handler(event):
     # Use pre-loaded model
     model_cfg = payload.get("model_cfg", {})
 
+    print(model_cfg)
     llm = _init_model(model_cfg)
     return handle_chat(payload, llm_instance=llm)
 
 
-"""
-For local manual test
-"""
+# For local manual test
+# util functions
 def load_json(path: str):
     p = Path(path)
     if not p.exists():
@@ -138,15 +136,13 @@ if __name__ == "__main__":
     # call handler function
     out = handler({"input": sample})
 
-    # 출력: 모델 응답 텍스트와 타이밍 정보
+    # print response content & timing
     try:
-        # response_contents는 List이므로 첫 번째 아이템의 content를 출력
         first_content = (
             out.get("response_contents", [{}])[0].get("content")
             if isinstance(out, dict) else None
         )
         print("\n[Model Reply]\n" + (first_content or "<no content>"))
-        # timing 전체 출력 (ms 단위 세부 항목 포함)
         timing = out.get("timing", {}) if isinstance(out, dict) else {}
         print("\n[Timing ms]\n" + json.dumps(timing, ensure_ascii=False, indent=2))
     except Exception as e:
