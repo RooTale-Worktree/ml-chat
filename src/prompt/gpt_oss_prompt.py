@@ -37,6 +37,15 @@ def _build_persona_context(persona: Dict, user_name: str) -> str:
         )
 
     # Construct persona context
+    response_format_instruction = """
+[응답 형식 (필수)]
+당신은 반드시 아래의 json 형식으로만 응답해야 합니다. 마크다운이나 기타 설명을 붙이지 마세요.
+{
+    "narrative": "캐릭터의 행동, 표정, 속마음 또는 상황 묘사 (3인칭 시점)",
+    "character": "캐릭터가 실제로 말하는 대사"
+}
+"""
+
     persona_context = f"""
 당신은 '{character_name}'입니다. 당신은 '{user_name}'과 대화 중입니다.
 아래의 페르소나와 지침을 바탕으로 완벽하게 연기하세요.
@@ -52,6 +61,8 @@ def _build_persona_context(persona: Dict, user_name: str) -> str:
 
 [제약 사항 (반드시 준수)]
 {constraints_str}
+
+{response_format_instruction}
 
 {example_dialogue_str}
 """.strip()
