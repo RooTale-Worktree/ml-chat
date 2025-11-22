@@ -7,16 +7,26 @@ from llama_index.core import StorageContext, load_index_from_storage, VectorStor
 from llama_index.core.schema import NodeWithScore
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
+from src.config.config import settings
 
 
 # 1. '스토리 인덱스' (Story RAG)가 저장된 기본 폴더
 STORY_INDEX_BASE_DIR = "data/story_indexes"
 
-# 2. build_scene_index.py와 동일한 임베딩 모델 설정 
-try:
-    Settings.embed_model = HuggingFaceEmbedding(model_name="jhgan/ko-sbert-nli")
-except Exception as e:
-    print(f"경고: HuggingFace 임베딩 모델 로드 실패. {e}")
+# 2. Cached embedding model (lazy loading)
+_EMBED_MODEL = None
+
+def _get_embed_model():
+    """Lazy load and cache the embedding model."""
+    global _EMBED_MODEL
+    if _EMBED_MODEL is None:
+        try:
+            _EMBED_MODEL = HuggingFaceEmbedding(model_name=settings.embed_model_name)
+            print(f"[Story RAG] Embedding model loaded: {settings.embed_model_name}")
+        except Exception as e:
+            print(f"경고: HuggingFace 임베딩 모델 로드 실패. {e}")
+            raise
+    return _EMBED_MODEL
 
 # --- 인덱스 로더 함수 ---
 
@@ -26,6 +36,9 @@ def load_story_index(story_title: str) -> Optional[VectorStoreIndex]:
     'story_title'을 기반으로 사전 구축된 '스토리 인덱스'를 로드합니다.
     """
     try:
+        # Set embedding model (lazy load on first call)
+        Settings.embed_model = _get_embed_model()
+        
         index_dir = Path(STORY_INDEX_BASE_DIR) / story_title
         if not index_dir.exists():
             print(f"경고: Story 인덱스를 찾을 수 없습니다. (경로: {index_dir})")
