@@ -64,11 +64,13 @@ def handler(event):
     Returns:
         ChatResponse dict
     """
+    print("[HANDLER] Received event")
     payload = event.get('input') if isinstance(event, dict) else event
     if not isinstance(payload, dict):
         raise ValueError("Invalid event payload; expected dict or {'input': dict}")
     
     # Use pre-loaded model
+    print("[HANDLER] Initializing model...")
     model_cfg = payload.get("model_cfg", {})
 
     print(model_cfg)
@@ -77,35 +79,13 @@ def handler(event):
 
 
 # For local manual test
-# util functions
-def load_json(path: str):
+def _load_json(path: str):
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"Json file not found: {path}")
     with p.open("r", encoding="utf-8") as f:
         return json.load(f)
-    
-def load_vector(contents: list):
-    # Materialize embeddings from embedding_ref (if present)
-    try:
-        if isinstance(contents, list):
-            for content in contents:
-                if (not isinstance(content, dict)) or ("content" not in content):
-                   continue
-                ref = content.get("embedding_ref")
-                if isinstance(ref, str) and ref:
-                    try:
-                        vec = np.load(ref).astype(float).tolist()
-                        content["embedding"] = vec
-                    except Exception:
-                        # Leave as-is if loading fails
-                        content["embedding"] = None
-                        pass
-                    content.pop("embedding_ref", None)
-    except Exception:
-        # Non-fatal; proceed without embedding materialization
-        pass
-    return contents
+
 
 if __name__ == "__main__":
 
@@ -119,11 +99,9 @@ if __name__ == "__main__":
                         default="./data/mock/sample_request_gpt_oss.json", help="other request metas")
     args = parser.parse_args()
 
-    path_chat_history = None if args.chat_history == "" else args.chat_history
-
-    persona = load_json(args.persona)
-    chat_history = load_vector(load_json(path_chat_history)) if path_chat_history else []
-    others = load_json(args.others)
+    persona = _load_json(args.persona)
+    chat_history = _load_json(args.chat_history)
+    others = _load_json(args.others)
 
     # structure sample request
     sample = {
@@ -137,17 +115,6 @@ if __name__ == "__main__":
     out = handler({"input": sample})
 
     # print response content & timing
-    try:
-        first_content = (
-            out.get("response_contents", [{}])[0].get("content")
-            if isinstance(out, dict) else None
-        )
-        print("\n[Model Reply]\n" + (first_content or "<no content>"))
-        timing = out.get("timing", {}) if isinstance(out, dict) else {}
-        print("\n[Timing ms]\n" + json.dumps(timing, ensure_ascii=False, indent=2))
-    except Exception as e:
-        print(f"[Print Error] {e}")
-    
     from pprint import pprint
     print("\n[Full Response]")
     pprint(out)
