@@ -1,33 +1,17 @@
-# ===== 베이스 이미지 =====
+# Base image with vLLM pre-installed (includes PyTorch and CUDA)
+# provides the basic runtime environment (~12GB)
 FROM vllm/vllm-openai:latest
 
-# PyTorch 베이스로 시작하는 경우
-# FROM --platform=linux/amd64 pytorch/pytorch:2.5.0-cuda12.4-cudnn9-runtime
-
-# ===== 필수 유틸 =====
+# Install essential utilities (git, curl, etc ...)
 USER root
 RUN apt-get update && apt-get install -y \
     git wget curl vim build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# ===== 작업 디렉토리 =====
+# Set the working directory for subsequent commands
 WORKDIR /workspace
 
-# ===== Python 의존성 설치 =====
-COPY requirements.txt /workspace/
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
-
-# ===== 모델 사전 다운로드 =====
-# Cold start 시간을 줄이기 위해
-RUN python3 -c "from huggingface_hub import snapshot_download; \
-    snapshot_download('openai/gpt-oss-20b', cache_dir='/workspace/.cache/huggingface'); \
-    print('Model downloaded to cache')"
-
-# ===== 소스코드 복사 =====
-COPY . /workspace
-
-# ===== 환경 변수 =====
+# Set environment variables for Python and model caching
 ENV PYTHONPATH=/workspace \
     HF_HUB_ENABLE_HF_TRANSFER=1 \
     TRANSFORMERS_CACHE=/workspace/.cache/huggingface \
@@ -35,10 +19,29 @@ ENV PYTHONPATH=/workspace \
     VLLM_ALLOW_LONG_MAX_MODEL_LEN=1 \
     CUDA_VISIBLE_DEVICES=0
 
-# ===== 사전 처리: Neo4j에서 인덱스 빌드 =====
-# Neo4j 접근이 빌드 타임에 가능하다면 활성화
+# Download python dependencies (~650MB)
+COPY requirements.txt /workspace/
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Download LLM model to specified cache directory
+# model_name: openai/gpt-oss-20b (~51GB)
+RUN python3 -c "from huggingface_hub import snapshot_download; \
+    snapshot_download('openai/gpt-oss-20b', cache_dir='/workspace/.cache/huggingface'); \
+    print('Model downloaded to cache')"
+
+# Download embedding model to specified cache directory
+# model_name: jhgan/ko-sbert-nli (~500MB)
+RUN python3 -c "from sentence_transformers import SentenceTransformer; \
+    SentenceTransformer('jhgan/ko-sbert-nli', cache_folder='/workspace/.cache/sentence_transformers'); \
+    print('Embedding model downloaded to cache')"
+
+# Copy source code into the container
+# It is placed at the end to leverage Docker layer caching
+COPY . /workspace
+
+# If required: build the index from Neo4j
 # RUN python scripts/build_index.py || echo "Index build skipped (no DB access)"
 
-# ===== RunPod Handler 설정 =====
-# RunPod serverless는 handler.py의 handler 함수를 자동 호출
+# Commands implemented when the container starts
 CMD ["python", "-u", "handler.py"]

@@ -60,25 +60,48 @@ def handler(event):
     """
     RunPod serverless handler.
     Args:
-        event: {"input": {...}} 형식의 요청
+        event: {"input": {...}}
     Returns:
-        ChatResponse dict
+        ChatResponse dict or error dict
     """
-    print("[HANDLER] Received event")
-    payload = event.get('input') if isinstance(event, dict) else event
-    if not isinstance(payload, dict):
-        raise ValueError("Invalid event payload; expected dict or {'input': dict}")
+    try:
+        print("[HANDLER] Received event")
+        payload = event.get('input') if isinstance(event, dict) else event
+        if not isinstance(payload, dict):
+            raise ValueError("Invalid event payload; expected dict or {'input': dict}")
+        
+        # Use pre-loaded model
+        print("[HANDLER] Initializing model...")
+        model_cfg = payload.get("model_cfg", {})
+
+        print(model_cfg)
+        llm = _init_model(model_cfg)
+        return handle_chat(payload, llm_instance=llm)
     
-    # Use pre-loaded model
-    print("[HANDLER] Initializing model...")
-    model_cfg = payload.get("model_cfg", {})
+    except ValueError as e:
+        # Input validation errors
+        error_msg = f"Validation error: {str(e)}"
+        print(f"[HANDLER ERROR] {error_msg}")
+        return {
+            "error": error_msg,
+            "error_type": "ValidationError",
+            "status": "failed"
+        }
+    
+    except Exception as e:
+        # Catch all other errors (orchestrator, model loading, etc.)
+        error_msg = f"Internal error: {str(e)}"
+        print(f"[HANDLER ERROR] {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "error": error_msg,
+            "error_type": type(e).__name__,
+            "status": "failed"
+        }
 
-    print(model_cfg)
-    llm = _init_model(model_cfg)
-    return handle_chat(payload, llm_instance=llm)
 
-
-# For local manual test
+# ===== For local manual test =====
 def _load_json(path: str):
     p = Path(path)
     if not p.exists():

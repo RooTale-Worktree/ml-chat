@@ -60,6 +60,7 @@ def retrieve_story_context(
 ) -> List:
     
     all_nodes: List[NodeWithScore] = []
+    results: List[Dict] = []
 
     # 1.검색
     story_index = load_story_index(story_title)
@@ -70,16 +71,15 @@ def retrieve_story_context(
         all_nodes.extend(retrieved_nodes)
     else:
         print(f"'{story_title}' 인덱스가 로드되지 않아 RAG 검색을 건너뜁니다.")
+        return results
 
     # 2.결과 변환 (Node -> List[Dict])
-    results: List[Dict] = []
     for i, node_with_score in enumerate(all_nodes):
         node = node_with_score.node
         results.append({
             "text": node.get_content(),
             "score": node_with_score.score 
         })
-    
     return results
 
 __all__ = ["retrieve_story_context"]
