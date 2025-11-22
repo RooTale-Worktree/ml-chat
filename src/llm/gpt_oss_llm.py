@@ -73,7 +73,7 @@ class GPTOssLLM:
         )
 
         # Generate (vLLM handles batching internally)
-        outputs = self.llm.generate([prompt], sampling_params)
+        outputs = self.llm.generate(prompt, sampling_params)
         output = outputs[0]
         
         # Extract generated text
