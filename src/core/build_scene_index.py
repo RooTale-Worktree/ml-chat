@@ -5,11 +5,11 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from pathlib import Path
 from typing import List, Dict, Any
 
+from src.config.config import settings
 
 # RAG가 사용할 임베딩 모델
-EMBED_MODEL_NAME = "jhgan/ko-sbert-nli"
-
-BASE_INDEX_DIR = "data/story_indexes" 
+EMBED_MODEL_NAME = settings.embed_model_name
+BASE_INDEX_DIR = settings.base_index_dir
 
 def _parse_story_node(story_node_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -108,7 +108,6 @@ def build_scene_index(
     character_node_list: List[Dict[str, Any]]
 ):
    
-    
     story_info = _parse_story_node(story_node_data)
     story_title = story_info["title"] 
 

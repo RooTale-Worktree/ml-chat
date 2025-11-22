@@ -2,9 +2,9 @@
 Central configuration loader.
 
 Environment precedence:
-1. Explicit function arguments / overrides
-2. Environment variables
-3. Defaults in code
+    1. Explicit function arguments / overrides
+    2. Environment variables
+    3. Defaults in code
 
 Add any service-wide constants or dynamic settings here.
 """
@@ -15,6 +15,7 @@ from functools import lru_cache
 import os
 
 class Settings(BaseSettings):
+
     env: str = Field(default="local")
     log_level: str = Field(default="INFO")
 
@@ -23,17 +24,9 @@ class Settings(BaseSettings):
     gpt_oss_model_id: str = Field(default="openai/gpt-oss-20b")
     solar_model_id: str = Field(default="upstage/SOLAR-10.7B-Instruct-v1.0")
     eeve_model_id: str = Field(default="yanolja/YanoljaNEXT-EEVE-Instruct-10.8B")
-    max_new_tokens: int = 256
-    temperature: float = 0.8
-    top_p: float = 0.9
-    repetition_penalty: float = 1.1
 
-    # RAG / retrieval params (stub values)
-    chat_k: int = 4
-    story_k: int = 5
-
-    data_dir: str = Field(default="data")
-    index_dir: str = Field(default="data/indexes")
+    embed_model_name: str = Field(default="jhgan/ko-sbert-nli")
+    base_index_dir: str = Field(default="data/story_indexes")
 
     class Config:
         env_prefix = "MLCHAT_"

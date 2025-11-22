@@ -35,6 +35,7 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
             trust_remote_code=trust_remote_code,
             dtype=dtype,
         )
+    
     elif model_name == "solar-10.7b":
         repo_id = settings.solar_model_id
         tensor_parallel = model_cfg.get("tensor_parallel_size", 1)
@@ -53,6 +54,7 @@ def get_llm(model_name: str | None, model_cfg: dict | None = None):
             trust_remote_code=trust_remote_code,
             dtype=dtype,
         )
+    
     elif model_name == "eeve-10.8b":
         repo_id = settings.eeve_model_id
         tensor_parallel = model_cfg.get("tensor_parallel_size", 1)

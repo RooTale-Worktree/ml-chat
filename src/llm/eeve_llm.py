@@ -29,7 +29,9 @@ class EeveeLLM:
             tensor_parallel_size: Number of GPUs for tensor parallelism.
             gpu_memory_utilization: Fraction of GPU memory to use (0.0-1.0).
             max_model_len: Maximum sequence length (None = auto-detect).
+            max_num_seqs: Maximum number of sequences to process in parallel.
             trust_remote_code: Whether to allow custom modeling code.
+            dtype: Data type for model weights (e.g., "auto", "float16", "bfloat16").
         """
         self.model_id = model_id
 

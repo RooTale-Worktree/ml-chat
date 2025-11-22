@@ -1,8 +1,5 @@
 """
 GPT-OSS LLM adapter using vLLM for high-performance inference.
-
-vLLM provides optimized inference with PagedAttention, continuous batching,
-and efficient memory management for faster throughput compared to vanilla transformers.
 """
 from __future__ import annotations
 from functools import lru_cache
@@ -17,7 +14,7 @@ _DEFAULT_STOP_STRINGS: List[str] = ["USER:", "\nUSER:"]
 class GPTOssLLM:
     def __init__(
         self,
-        model_id: str = "openai/gpt-oss-20b",
+        model_id: str = settings.gpt_oss_model_id,
         tensor_parallel_size: int = 1,
         gpu_memory_utilization: float = 0.9,
         max_model_len: int = 1024,
@@ -31,7 +28,9 @@ class GPTOssLLM:
             tensor_parallel_size: Number of GPUs for tensor parallelism.
             gpu_memory_utilization: Fraction of GPU memory to use (0.0-1.0).
             max_model_len: Maximum sequence length (None = auto-detect from model config).
+            max_num_seqs: Maximum number of sequences to process in parallel.
             trust_remote_code: Whether to allow custom modeling code from the repo.
+            dtype: Data type for model weights (e.g., "auto", "float16", "bfloat16").
         """
         model_id = model_id or settings.gpt_oss_model_id
         self.model_id = model_id
@@ -48,13 +47,11 @@ class GPTOssLLM:
         )
     
     def _parse_generated_text(self, text: str):
-        """
-        Parse generated text to separate CoT and final reply.
-        """
+        """ Parse generated text to separate CoT and final reply. """
         cot_content = ""
         reply_content = text
 
-        # 1. Reply 마커로 분리 시도
+        # 1. Split by final reply marker ("assistantfinal=" or "assistantfinal")
         if "assistantfinal=" in text:
             parts = text.split("assistantfinal=", 1)
             cot_content = parts[0]
@@ -63,7 +60,8 @@ class GPTOssLLM:
             parts = text.split("assistantfinal", 1)
             cot_content = parts[0]
             reply_content = parts[1].strip()            
-            # 2. CoT 마커 제거 (앞부분에 붙어있다면)
+        
+        # 2. Remove CoT marker if it appears at the start ("analysis")
         if cot_content.startswith("analysis"):
             cot_content = cot_content[len("analysis"):].strip()
         else:
@@ -95,13 +93,14 @@ class GPTOssLLM:
         generated_full_text = output.outputs[0].text
         cot, reply = self._parse_generated_text(generated_full_text)
 
+        # print logs
         print(f"[Handler] CoT: {cot}")
         print(f"[Handler] Reply: {reply}")
         
         # vLLM provides token counts
         prompt_tokens = len(output.prompt_token_ids)
         completion_tokens = len(output.outputs[0].token_ids)
-        finish_reason = output.outputs[0].finish_reason  # 'stop', 'length', etc.
+        finish_reason = output.outputs[0].finish_reason
 
         usage = {
             "prompt_tokens": prompt_tokens,
@@ -133,7 +132,9 @@ def load_gpt_oss_llm(
         tensor_parallel_size: Number of GPUs for tensor parallelism (default: 1).
         gpu_memory_utilization: GPU memory fraction (0.0-1.0, default: 0.9).
         max_model_len: Max sequence length (None = auto from model config).
+        max_num_seqs: Maximum number of sequences to process in parallel.
         trust_remote_code: Allow custom modeling code.
+        dtype: Data type for model weights (e.g., "auto", "float16", "bfloat16").
     """
     return GPTOssLLM(
         model_id=model_id,
