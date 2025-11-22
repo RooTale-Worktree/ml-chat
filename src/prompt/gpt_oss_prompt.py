@@ -87,7 +87,7 @@ def build_prompt(prompt_input: Dict) -> List[Dict]:
         system_config = system_config.with_reasoning_effort(ReasoningEffort.MEDIUM)
     else:
         system_config = system_config.with_reasoning_effort(ReasoningEffort.LOW)
-    system_config = system_config.conversation_start_date(datetime.today().strftime("%Y-%m-%d"))
+    system_config.conversation_start_date = datetime.today().strftime("%Y-%m-%d")
     system_messages = Message.from_role_and_content(Role.SYSTEM, system_config)
 
     # Define chat history content
@@ -104,12 +104,15 @@ def build_prompt(prompt_input: Dict) -> List[Dict]:
             )
 
     # Define story context content
-    story_context_content = DeveloperContent.new()
+    story_message_list = []
     if story_context:
-        story_context_text = "[스토리 관련 정보]\n" + "\n".join(
+        story_text = "[스토리 관련 정보]\n" + "\n".join(
             [f"- {story['text']}" for story in story_context]
         )
-        story_context_content = story_context_content.with_instructions(story_context_text)
+        story_content = DeveloperContent.new().with_instructions(story_text)
+        story_message_list.append(
+            Message.from_role_and_content(Role.DEVELOPER, story_content)
+        )
 
     # Current user message
     current_user_input = Message.from_role_and_content(Role.USER, user_message)
@@ -118,7 +121,7 @@ def build_prompt(prompt_input: Dict) -> List[Dict]:
     conversation = Conversation.from_messages(
         [system_messages] +
         [Message.from_role_and_content(Role.DEVELOPER, persona_content)] +
-        [Message.from_role_and_content(Role.DEVELOPER, story_context_content)] +
+        story_message_list +
         history_messages +
         [current_user_input]
     )
